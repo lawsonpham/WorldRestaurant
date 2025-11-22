@@ -81,18 +81,11 @@ Each dish requires 3-4 specific ingredients - pay attention to the customer's or
 - Vietnamese-inspired music
 - Cultural appreciation through gameplay
 
-## 📋 System Requirements
-
-- **Python 3.6 or higher**
-- **Pygame library**
-- **Pillow library**
-- **Windows, Mac, or Linux**
-- **Mouse and keyboard**
-
 ## 🎵 Credits
 
 Made with ❤️ to celebrate Vietnamese culture and cuisine
-
+Developed for KSA x Claude Vibe-a-thon
+utilizing Claude AI
 ---
 
 **Chúc ngon miệng!** (Enjoy your meal!)
