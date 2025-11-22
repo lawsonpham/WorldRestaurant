@@ -39,6 +39,7 @@ class Player:
         self.color = ORANGE
         self.rect = pygame.Rect(x, y, self.width, self.height)
         self.held_ingredient = None
+        self.held_ingredient_sprite = None
         self.sprite = None
         if sprite_path:
             try:
@@ -88,10 +89,20 @@ class Player:
 
         # Show held ingredient
         if self.held_ingredient:
-            text = font.render(self.held_ingredient[:4], True, WHITE)
-            pygame.draw.circle(screen, GREEN, (self.rect.centerx, self.rect.y - 35), 15)
-            text_rect = text.get_rect(center=(self.rect.centerx, self.rect.y - 35))
-            screen.blit(text, text_rect)
+            if self.held_ingredient_sprite:
+                # Draw downscaled ingredient sprite
+                sprite_size = 30
+                sprite_x = self.rect.centerx - sprite_size // 2
+                sprite_y = self.rect.y - 40
+                screen.blit(self.held_ingredient_sprite, (sprite_x, sprite_y))
+                # Add a small border/background
+                pygame.draw.rect(screen, WHITE, (sprite_x - 2, sprite_y - 2, sprite_size + 4, sprite_size + 4), 2)
+            else:
+                # Fallback to text display
+                text = font.render(self.held_ingredient[:4], True, WHITE)
+                pygame.draw.circle(screen, GREEN, (self.rect.centerx, self.rect.y - 35), 15)
+                text_rect = text.get_rect(center=(self.rect.centerx, self.rect.y - 35))
+                screen.blit(text, text_rect)
 
 class IngredientStation:
     def __init__(self, x, y, ingredient_name, color, sprite_path=None):
@@ -128,7 +139,7 @@ class IngredientStation:
         return self.rect.colliderect(player.rect.inflate(20, 20))
 
 class CookingStation:
-    def __init__(self, x, y, station_type):
+    def __init__(self, x, y, station_type, sprite_path=None):
         self.x = x
         self.y = y
         self.width = 120
@@ -139,6 +150,13 @@ class CookingStation:
         self.cooking = False
         self.cook_timer = 0
         self.cook_time = 180  # 3 seconds at 60 FPS
+        self.sprite = None
+        if sprite_path:
+            try:
+                self.sprite = pygame.image.load(sprite_path)
+                self.sprite = pygame.transform.scale(self.sprite, (self.width, self.height))
+            except:
+                self.sprite = None
         
     def add_ingredient(self, ingredient):
         if len(self.ingredients) < 5:
@@ -175,13 +193,25 @@ class CookingStation:
         else:
             color = GREEN
             label = "SERVE"
-            
-        pygame.draw.rect(screen, color, self.rect, border_radius=10)
-        pygame.draw.rect(screen, BLACK, self.rect, 3, border_radius=10)
-        
-        # Label
-        text = font.render(label, True, WHITE)
-        screen.blit(text, (self.rect.x + 10, self.rect.y + 5))
+
+        if self.sprite:
+            # Draw sprite
+            screen.blit(self.sprite, (self.rect.x, self.rect.y))
+            # Draw label on top
+            text = font.render(label, True, WHITE)
+            text_bg = pygame.Surface((text.get_width() + 6, text.get_height() + 2))
+            text_bg.fill(BLACK)
+            text_bg.set_alpha(180)
+            screen.blit(text_bg, (self.rect.x + 8, self.rect.y + 3))
+            screen.blit(text, (self.rect.x + 10, self.rect.y + 5))
+        else:
+            # Fallback to colored rectangles
+            pygame.draw.rect(screen, color, self.rect, border_radius=10)
+            pygame.draw.rect(screen, BLACK, self.rect, 3, border_radius=10)
+
+            # Label
+            text = font.render(label, True, WHITE)
+            screen.blit(text, (self.rect.x + 10, self.rect.y + 5))
         
         # Show ingredients
         for i, ing in enumerate(self.ingredients):
@@ -319,9 +349,9 @@ class VietnameseRestaurantGame:
         ]
         
         # Cooking stations
-        self.prep_station = CookingStation(50, 650, "prep")
-        self.cook_station = CookingStation(200, 650, "cook")
-        self.serve_station = CookingStation(350, 650, "serve")
+        self.prep_station = CookingStation(50, 650, "prep", "resources/sprites/prep_station.png")
+        self.cook_station = CookingStation(200, 650, "cook", "resources/sprites/cook_station.png")
+        self.serve_station = CookingStation(350, 650, "serve", "resources/sprites/serve_station.png")
         
         # Customers
         self.customers = []
@@ -350,7 +380,14 @@ class VietnameseRestaurantGame:
         if len(self.customers) < 3:
             names = ["Minh", "Linh", "Hùng", "Mai", "Tuấn", "Hoa"]
             colors = [RED, GREEN, LIGHT_BLUE, YELLOW, ORANGE]
-            sprites = ["resources/sprites/guy-sprite.png", "resources/sprites/girl-sprite.png"]
+            sprites = [
+                "resources/sprites/customer1.png",
+                "resources/sprites/customer2.png",
+                "resources/sprites/customer3.png",
+                "resources/sprites/customer4.png",
+                "resources/sprites/customer5.png",
+                "resources/sprites/customer6.png"
+            ]
 
             name = random.choice(names)
             color = random.choice(colors)
@@ -474,6 +511,14 @@ class VietnameseRestaurantGame:
         for station in self.ingredient_stations:
             if station.is_player_near(self.player) and not self.player.held_ingredient:
                 self.player.held_ingredient = station.ingredient_name
+                # Set the downscaled sprite
+                if station.sprite:
+                    try:
+                        self.player.held_ingredient_sprite = pygame.transform.scale(station.sprite, (30, 30))
+                    except:
+                        self.player.held_ingredient_sprite = None
+                else:
+                    self.player.held_ingredient_sprite = None
                 self.show_message(f"Picked up {station.ingredient_name}!")
                 return
         
@@ -483,6 +528,7 @@ class VietnameseRestaurantGame:
                 self.prep_station.add_ingredient(self.player.held_ingredient)
                 self.show_message(f"Added {self.player.held_ingredient} to prep!")
                 self.player.held_ingredient = None
+                self.player.held_ingredient_sprite = None
             elif self.prep_station.ingredients and not self.cook_station.ingredients:
                 # Move to cook station
                 self.cook_station.ingredients = self.prep_station.ingredients[:]
