@@ -30,7 +30,7 @@ MENU = "menu"
 GAME = "game"
 
 class Player:
-    def __init__(self, x, y):
+    def __init__(self, x, y, sprite_path=None):
         self.x = x
         self.y = y
         self.width = 40
@@ -39,6 +39,13 @@ class Player:
         self.color = ORANGE
         self.rect = pygame.Rect(x, y, self.width, self.height)
         self.held_ingredient = None
+        self.sprite = None
+        if sprite_path:
+            try:
+                self.sprite = pygame.image.load(sprite_path)
+                self.sprite = pygame.transform.scale(self.sprite, (self.width, self.height))
+            except:
+                self.sprite = None
         
     def move(self, keys, obstacles):
         old_x, old_y = self.x, self.y
@@ -66,14 +73,19 @@ class Player:
                 break
                 
     def draw(self, screen, font):
-        # Body
-        pygame.draw.rect(screen, self.color, self.rect, border_radius=5)
-        # Head
-        pygame.draw.circle(screen, self.color, (self.rect.centerx, self.rect.y - 10), 15)
-        # Eyes
-        pygame.draw.circle(screen, BLACK, (self.rect.centerx - 5, self.rect.y - 10), 3)
-        pygame.draw.circle(screen, BLACK, (self.rect.centerx + 5, self.rect.y - 10), 3)
-        
+        if self.sprite:
+            # Draw sprite
+            screen.blit(self.sprite, (self.rect.x, self.rect.y))
+        else:
+            # Fallback to simple shapes
+            # Body
+            pygame.draw.rect(screen, self.color, self.rect, border_radius=5)
+            # Head
+            pygame.draw.circle(screen, self.color, (self.rect.centerx, self.rect.y - 10), 15)
+            # Eyes
+            pygame.draw.circle(screen, BLACK, (self.rect.centerx - 5, self.rect.y - 10), 3)
+            pygame.draw.circle(screen, BLACK, (self.rect.centerx + 5, self.rect.y - 10), 3)
+
         # Show held ingredient
         if self.held_ingredient:
             text = font.render(self.held_ingredient[:4], True, WHITE)
@@ -82,7 +94,7 @@ class Player:
             screen.blit(text, text_rect)
 
 class IngredientStation:
-    def __init__(self, x, y, ingredient_name, color):
+    def __init__(self, x, y, ingredient_name, color, sprite_path=None):
         self.x = x
         self.y = y
         self.width = 80
@@ -90,13 +102,27 @@ class IngredientStation:
         self.rect = pygame.Rect(x, y, self.width, self.height)
         self.ingredient_name = ingredient_name
         self.color = color
+        self.sprite = None
+        if sprite_path:
+            try:
+                self.sprite = pygame.image.load(sprite_path)
+                self.sprite = pygame.transform.scale(self.sprite, (self.width, self.height))
+            except:
+                self.sprite = None
         
     def draw(self, screen, font):
-        pygame.draw.rect(screen, self.color, self.rect, border_radius=10)
-        pygame.draw.rect(screen, BLACK, self.rect, 3, border_radius=10)
-        text = font.render(self.ingredient_name[:6], True, WHITE)
-        text_rect = text.get_rect(center=self.rect.center)
-        screen.blit(text, text_rect)
+        if self.sprite:
+            # Draw sprite
+            screen.blit(self.sprite, (self.rect.x, self.rect.y))
+            # Draw border
+            pygame.draw.rect(screen, BLACK, self.rect, 2, border_radius=5)
+        else:
+            # Fallback to colored rectangles
+            pygame.draw.rect(screen, self.color, self.rect, border_radius=10)
+            pygame.draw.rect(screen, BLACK, self.rect, 3, border_radius=10)
+            text = font.render(self.ingredient_name[:6], True, WHITE)
+            text_rect = text.get_rect(center=self.rect.center)
+            screen.blit(text, text_rect)
         
     def is_player_near(self, player):
         return self.rect.colliderect(player.rect.inflate(20, 20))
@@ -173,7 +199,7 @@ class CookingStation:
         return self.rect.colliderect(player.rect.inflate(20, 20))
 
 class Customer:
-    def __init__(self, name, color, order, x, y):
+    def __init__(self, name, color, order, x, y, sprite_path=None):
         self.name = name
         self.color = color
         self.order = order  # List of required ingredients
@@ -184,6 +210,13 @@ class Customer:
         self.served = False
         self.leaving = False
         self.rect = pygame.Rect(x, y, 60, 80)
+        self.sprite = None
+        if sprite_path:
+            try:
+                self.sprite = pygame.image.load(sprite_path)
+                self.sprite = pygame.transform.scale(self.sprite, (60, 80))
+            except:
+                self.sprite = None
         
     def update(self):
         if not self.served and not self.leaving:
@@ -193,12 +226,16 @@ class Customer:
                 
     def draw(self, screen, font, small_font):
         # Customer body
-        pygame.draw.rect(screen, self.color, self.rect, border_radius=5)
-        pygame.draw.circle(screen, self.color, (self.rect.centerx, self.rect.y - 10), 15)
-        
-        # Eyes
-        pygame.draw.circle(screen, BLACK, (self.rect.centerx - 5, self.rect.y - 10), 3)
-        pygame.draw.circle(screen, BLACK, (self.rect.centerx + 5, self.rect.y - 10), 3)
+        if self.sprite:
+            screen.blit(self.sprite, (self.rect.x, self.rect.y))
+        else:
+            # Fallback to simple shapes
+            pygame.draw.rect(screen, self.color, self.rect, border_radius=5)
+            pygame.draw.circle(screen, self.color, (self.rect.centerx, self.rect.y - 10), 15)
+
+            # Eyes
+            pygame.draw.circle(screen, BLACK, (self.rect.centerx - 5, self.rect.y - 10), 3)
+            pygame.draw.circle(screen, BLACK, (self.rect.centerx + 5, self.rect.y - 10), 3)
         
         # Name
         name_text = small_font.render(self.name, True, BLACK)
@@ -247,22 +284,38 @@ class VietnameseRestaurantGame:
         self.orders_completed = 0
         
         # Player
-        self.player = Player(400, 400)
-        
+        self.player = Player(400, 400, "resources/sprites/guy-sprite.png")
+
+        # Sprite mapping for ingredients
+        sprite_map = {
+            "Noodles": "resources/sprites/noodles.png",
+            "Broth": "resources/sprites/cooking_pho_pot.png",
+            "Beef": "resources/sprites/raw_beef.png",
+            "Pork": "resources/sprites/chicken_slices.png",  # Using chicken as substitute
+            "Shrimp": "resources/sprites/shrimp.png",
+            "Herbs": "resources/sprites/basil.png",
+            "Lime": "resources/sprites/lime_wedges.png",
+            "Pickle": "resources/sprites/sliced_jalapeno.png",
+            "Cilantro": "resources/sprites/cilantro.png",
+            "Rice Paper": "resources/sprites/fresh_spring_rolls.png",
+            "Bread": "resources/sprites/banh_mi_sandwich.png",
+            "Fish Sauce": "resources/sprites/fish_sauce.png",
+        }
+
         # Ingredient stations
         self.ingredient_stations = [
-            IngredientStation(50, 300, "Noodles", YELLOW),
-            IngredientStation(150, 300, "Broth", BROWN),
-            IngredientStation(250, 300, "Beef", RED),
-            IngredientStation(350, 300, "Pork", LIGHT_BROWN),
-            IngredientStation(50, 400, "Shrimp", ORANGE),
-            IngredientStation(150, 400, "Herbs", GREEN),
-            IngredientStation(250, 400, "Lime", DARK_GREEN),
-            IngredientStation(350, 400, "Pickle", YELLOW),
-            IngredientStation(50, 500, "Cilantro", GREEN),
-            IngredientStation(150, 500, "Rice Paper", WHITE),
-            IngredientStation(250, 500, "Bread", LIGHT_BROWN),
-            IngredientStation(350, 500, "Fish Sauce", BROWN),
+            IngredientStation(50, 300, "Noodles", YELLOW, sprite_map.get("Noodles")),
+            IngredientStation(150, 300, "Broth", BROWN, sprite_map.get("Broth")),
+            IngredientStation(250, 300, "Beef", RED, sprite_map.get("Beef")),
+            IngredientStation(350, 300, "Pork", LIGHT_BROWN, sprite_map.get("Pork")),
+            IngredientStation(50, 400, "Shrimp", ORANGE, sprite_map.get("Shrimp")),
+            IngredientStation(150, 400, "Herbs", GREEN, sprite_map.get("Herbs")),
+            IngredientStation(250, 400, "Lime", DARK_GREEN, sprite_map.get("Lime")),
+            IngredientStation(350, 400, "Pickle", YELLOW, sprite_map.get("Pickle")),
+            IngredientStation(50, 500, "Cilantro", GREEN, sprite_map.get("Cilantro")),
+            IngredientStation(150, 500, "Rice Paper", WHITE, sprite_map.get("Rice Paper")),
+            IngredientStation(250, 500, "Bread", LIGHT_BROWN, sprite_map.get("Bread")),
+            IngredientStation(350, 500, "Fish Sauce", BROWN, sprite_map.get("Fish Sauce")),
         ]
         
         # Cooking stations
@@ -297,16 +350,18 @@ class VietnameseRestaurantGame:
         if len(self.customers) < 3:
             names = ["Minh", "Linh", "Hùng", "Mai", "Tuấn", "Hoa"]
             colors = [RED, GREEN, LIGHT_BLUE, YELLOW, ORANGE]
-            
+            sprites = ["resources/sprites/guy-sprite.png", "resources/sprites/girl-sprite.png"]
+
             name = random.choice(names)
             color = random.choice(colors)
+            sprite = random.choice(sprites)
             dish_name = random.choice(list(self.dishes.keys()))
             order = self.dishes[dish_name]
-            
+
             x = 900
             y = 150 + len(self.customers) * 200
-            
-            customer = Customer(name, color, order, x, y)
+
+            customer = Customer(name, color, order, x, y, sprite)
             self.customers.append(customer)
             
     def check_order_match(self, ingredients, customer_order):
