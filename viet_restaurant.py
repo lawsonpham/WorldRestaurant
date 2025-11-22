@@ -389,7 +389,7 @@ class VietnameseRestaurantGame:
         if len(self.customers) >= 3:
             return
 
-        names = ["Minh", "Linh", "Hùng", "Mai", "Tuấn", "Hoa"]
+        names = ["Bonny", "Hannah", "Talaal", "Ethan", "Danniel", "Mehul"]
         colors = [RED, GREEN, LIGHT_BLUE, YELLOW, ORANGE]
         sprites = [
             "resources/sprites/customer1.png",
@@ -445,8 +445,8 @@ class VietnameseRestaurantGame:
             self.screen.fill(CREAM)
 
         # Title - positioned in the decorative title area
-        title = self.title_font.render("Nhà Hàng Việt Nam", True, (255, 215, 0))
-        title_shadow = self.title_font.render("Nhà Hàng Việt Nam", True, (139, 90, 43))
+        title = self.title_font.render("Pho So 2", True, (255, 215, 0))
+        title_shadow = self.title_font.render("Pho So 2", True, (139, 90, 43))
         title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 150))
         # Shadow effect
         self.screen.blit(title_shadow, (title_rect.x + 3, title_rect.y + 3))
