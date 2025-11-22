@@ -1,13 +1,14 @@
 import pygame
 import sys
 import random
+import math
 
 # Initialize Pygame
 pygame.init()
 
 # Constants
-SCREEN_WIDTH = 1000
-SCREEN_HEIGHT = 700
+SCREEN_WIDTH = 1200
+SCREEN_HEIGHT = 800
 FPS = 60
 
 # Colors
@@ -21,92 +22,212 @@ YELLOW = (255, 215, 0)
 LIGHT_BLUE = (173, 216, 230)
 DARK_GREEN = (0, 100, 0)
 CREAM = (255, 253, 208)
+GRAY = (128, 128, 128)
+ORANGE = (255, 165, 0)
 
 # Game states
 MENU = "menu"
 GAME = "game"
-INFO = "info"
 
-class Button:
-    def __init__(self, x, y, width, height, text, color, hover_color):
-        self.rect = pygame.Rect(x, y, width, height)
-        self.text = text
-        self.color = color
-        self.hover_color = hover_color
-        self.current_color = color
-        
-    def draw(self, screen, font):
-        pygame.draw.rect(screen, self.current_color, self.rect, border_radius=10)
-        pygame.draw.rect(screen, BLACK, self.rect, 3, border_radius=10)
-        text_surface = font.render(self.text, True, BLACK)
-        text_rect = text_surface.get_rect(center=self.rect.center)
-        screen.blit(text_surface, text_rect)
-        
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEMOTION:
-            if self.rect.collidepoint(event.pos):
-                self.current_color = self.hover_color
-            else:
-                self.current_color = self.color
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if self.rect.collidepoint(event.pos):
-                return True
-        return False
-
-class Ingredient:
-    def __init__(self, name, x, y, color, size=60):
-        self.name = name
+class Player:
+    def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.width = 40
+        self.height = 60
+        self.speed = 5
+        self.color = ORANGE
+        self.rect = pygame.Rect(x, y, self.width, self.height)
+        self.held_ingredient = None
+        
+    def move(self, keys, obstacles):
+        old_x, old_y = self.x, self.y
+        
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            self.x -= self.speed
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            self.x += self.speed
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            self.y -= self.speed
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            self.y += self.speed
+            
+        # Update rect
+        self.rect.x = self.x
+        self.rect.y = self.y
+        
+        # Check collisions
+        for obstacle in obstacles:
+            if self.rect.colliderect(obstacle):
+                self.x = old_x
+                self.y = old_y
+                self.rect.x = self.x
+                self.rect.y = self.y
+                break
+                
+    def draw(self, screen, font):
+        # Body
+        pygame.draw.rect(screen, self.color, self.rect, border_radius=5)
+        # Head
+        pygame.draw.circle(screen, self.color, (self.rect.centerx, self.rect.y - 10), 15)
+        # Eyes
+        pygame.draw.circle(screen, BLACK, (self.rect.centerx - 5, self.rect.y - 10), 3)
+        pygame.draw.circle(screen, BLACK, (self.rect.centerx + 5, self.rect.y - 10), 3)
+        
+        # Show held ingredient
+        if self.held_ingredient:
+            text = font.render(self.held_ingredient[:4], True, WHITE)
+            pygame.draw.circle(screen, GREEN, (self.rect.centerx, self.rect.y - 35), 15)
+            text_rect = text.get_rect(center=(self.rect.centerx, self.rect.y - 35))
+            screen.blit(text, text_rect)
+
+class IngredientStation:
+    def __init__(self, x, y, ingredient_name, color):
+        self.x = x
+        self.y = y
+        self.width = 80
+        self.height = 80
+        self.rect = pygame.Rect(x, y, self.width, self.height)
+        self.ingredient_name = ingredient_name
         self.color = color
-        self.size = size
-        self.rect = pygame.Rect(x, y, size, size)
-        self.dragging = False
-        self.offset_x = 0
-        self.offset_y = 0
         
     def draw(self, screen, font):
-        pygame.draw.rect(screen, self.color, self.rect, border_radius=8)
-        pygame.draw.rect(screen, BLACK, self.rect, 2, border_radius=8)
-        
-        # Draw ingredient icon/text
-        text = font.render(self.name[:4], True, WHITE)
+        pygame.draw.rect(screen, self.color, self.rect, border_radius=10)
+        pygame.draw.rect(screen, BLACK, self.rect, 3, border_radius=10)
+        text = font.render(self.ingredient_name[:6], True, WHITE)
         text_rect = text.get_rect(center=self.rect.center)
         screen.blit(text, text_rect)
         
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if self.rect.collidepoint(event.pos):
-                self.dragging = True
-                mouse_x, mouse_y = event.pos
-                self.offset_x = self.rect.x - mouse_x
-                self.offset_y = self.rect.y - mouse_y
-                
-        elif event.type == pygame.MOUSEBUTTONUP:
-            self.dragging = False
-            
-        elif event.type == pygame.MOUSEMOTION:
-            if self.dragging:
-                mouse_x, mouse_y = event.pos
-                self.rect.x = mouse_x + self.offset_x
-                self.rect.y = mouse_y + self.offset_y
+    def is_player_near(self, player):
+        return self.rect.colliderect(player.rect.inflate(20, 20))
 
-class Order:
-    def __init__(self, dish_name, required_ingredients, fun_fact):
-        self.dish_name = dish_name
-        self.required_ingredients = required_ingredients
-        self.fun_fact = fun_fact
-        self.added_ingredients = []
+class CookingStation:
+    def __init__(self, x, y, station_type):
+        self.x = x
+        self.y = y
+        self.width = 120
+        self.height = 100
+        self.rect = pygame.Rect(x, y, self.width, self.height)
+        self.station_type = station_type  # "prep", "cook", "serve"
+        self.ingredients = []
+        self.cooking = False
+        self.cook_timer = 0
+        self.cook_time = 180  # 3 seconds at 60 FPS
         
-    def add_ingredient(self, ingredient_name):
-        if ingredient_name not in self.added_ingredients:
-            self.added_ingredients.append(ingredient_name)
+    def add_ingredient(self, ingredient):
+        if len(self.ingredients) < 5:
+            self.ingredients.append(ingredient)
+            return True
+        return False
+        
+    def start_cooking(self):
+        if self.ingredients and not self.cooking:
+            self.cooking = True
+            self.cook_timer = 0
             
-    def is_complete(self):
-        return set(self.added_ingredients) == set(self.required_ingredients)
-    
-    def is_correct(self):
-        return set(self.added_ingredients) == set(self.required_ingredients)
+    def update(self):
+        if self.cooking:
+            self.cook_timer += 1
+            if self.cook_timer >= self.cook_time:
+                self.cooking = False
+                return True  # Cooking complete
+        return False
+        
+    def clear(self):
+        self.ingredients = []
+        self.cooking = False
+        self.cook_timer = 0
+        
+    def draw(self, screen, font, small_font):
+        # Station background
+        if self.station_type == "prep":
+            color = LIGHT_BROWN
+            label = "PREP"
+        elif self.station_type == "cook":
+            color = RED
+            label = "COOK"
+        else:
+            color = GREEN
+            label = "SERVE"
+            
+        pygame.draw.rect(screen, color, self.rect, border_radius=10)
+        pygame.draw.rect(screen, BLACK, self.rect, 3, border_radius=10)
+        
+        # Label
+        text = font.render(label, True, WHITE)
+        screen.blit(text, (self.rect.x + 10, self.rect.y + 5))
+        
+        # Show ingredients
+        for i, ing in enumerate(self.ingredients):
+            ing_text = small_font.render(ing[:4], True, BLACK)
+            screen.blit(ing_text, (self.rect.x + 10 + (i % 3) * 30, self.rect.y + 35 + (i // 3) * 20))
+        
+        # Cooking progress
+        if self.cooking:
+            progress = self.cook_timer / self.cook_time
+            bar_width = self.width - 20
+            pygame.draw.rect(screen, WHITE, (self.rect.x + 10, self.rect.bottom - 20, bar_width, 10))
+            pygame.draw.rect(screen, YELLOW, (self.rect.x + 10, self.rect.bottom - 20, bar_width * progress, 10))
+            
+    def is_player_near(self, player):
+        return self.rect.colliderect(player.rect.inflate(20, 20))
+
+class Customer:
+    def __init__(self, name, color, order, x, y):
+        self.name = name
+        self.color = color
+        self.order = order  # List of required ingredients
+        self.x = x
+        self.y = y
+        self.patience = 100.0
+        self.max_patience = 100.0
+        self.served = False
+        self.leaving = False
+        self.rect = pygame.Rect(x, y, 60, 80)
+        
+    def update(self):
+        if not self.served and not self.leaving:
+            self.patience -= 0.05
+            if self.patience <= 0:
+                self.leaving = True
+                
+    def draw(self, screen, font, small_font):
+        # Customer body
+        pygame.draw.rect(screen, self.color, self.rect, border_radius=5)
+        pygame.draw.circle(screen, self.color, (self.rect.centerx, self.rect.y - 10), 15)
+        
+        # Eyes
+        pygame.draw.circle(screen, BLACK, (self.rect.centerx - 5, self.rect.y - 10), 3)
+        pygame.draw.circle(screen, BLACK, (self.rect.centerx + 5, self.rect.y - 10), 3)
+        
+        # Name
+        name_text = small_font.render(self.name, True, BLACK)
+        screen.blit(name_text, (self.rect.x, self.rect.bottom + 5))
+        
+        # Order bubble
+        bubble_x = self.rect.right + 10
+        bubble_y = self.rect.y
+        bubble_width = 150
+        bubble_height = 100
+        
+        pygame.draw.rect(screen, WHITE, (bubble_x, bubble_y, bubble_width, bubble_height), border_radius=10)
+        pygame.draw.rect(screen, BLACK, (bubble_x, bubble_y, bubble_width, bubble_height), 2, border_radius=10)
+        
+        # Order text
+        order_text = small_font.render("Wants:", True, BLACK)
+        screen.blit(order_text, (bubble_x + 5, bubble_y + 5))
+        
+        for i, ingredient in enumerate(self.order):
+            ing_text = small_font.render(f"• {ingredient[:6]}", True, DARK_GREEN)
+            screen.blit(ing_text, (bubble_x + 5, bubble_y + 30 + i * 20))
+        
+        # Patience bar
+        bar_width = 100
+        patience_percent = self.patience / self.max_patience
+        bar_color = GREEN if patience_percent > 0.5 else YELLOW if patience_percent > 0.25 else RED
+        
+        pygame.draw.rect(screen, GRAY, (bubble_x + 5, bubble_y + bubble_height - 20, bar_width, 15))
+        pygame.draw.rect(screen, bar_color, (bubble_x + 5, bubble_y + bubble_height - 20, bar_width * patience_percent, 15))
 
 class VietnameseRestaurantGame:
     def __init__(self):
@@ -118,107 +239,123 @@ class VietnameseRestaurantGame:
         # Fonts
         self.title_font = pygame.font.Font(None, 64)
         self.font = pygame.font.Font(None, 32)
-        self.small_font = pygame.font.Font(None, 24)
+        self.small_font = pygame.font.Font(None, 20)
         
         # Game state
         self.state = MENU
         self.score = 0
         self.orders_completed = 0
         
-        # Dishes database
+        # Player
+        self.player = Player(400, 400)
+        
+        # Ingredient stations
+        self.ingredient_stations = [
+            IngredientStation(50, 300, "Noodles", YELLOW),
+            IngredientStation(150, 300, "Broth", BROWN),
+            IngredientStation(250, 300, "Beef", RED),
+            IngredientStation(350, 300, "Pork", LIGHT_BROWN),
+            IngredientStation(50, 400, "Shrimp", ORANGE),
+            IngredientStation(150, 400, "Herbs", GREEN),
+            IngredientStation(250, 400, "Lime", DARK_GREEN),
+            IngredientStation(350, 400, "Pickle", YELLOW),
+            IngredientStation(50, 500, "Cilantro", GREEN),
+            IngredientStation(150, 500, "Rice Paper", WHITE),
+            IngredientStation(250, 500, "Bread", LIGHT_BROWN),
+            IngredientStation(350, 500, "Fish Sauce", BROWN),
+        ]
+        
+        # Cooking stations
+        self.prep_station = CookingStation(50, 650, "prep")
+        self.cook_station = CookingStation(200, 650, "cook")
+        self.serve_station = CookingStation(350, 650, "serve")
+        
+        # Customers
+        self.customers = []
+        self.customer_spawn_timer = 0
+        self.customer_spawn_delay = 300  # 5 seconds
+        
+        # Dishes
         self.dishes = {
-            "Phở": {
-                "ingredients": ["Noodles", "Broth", "Beef", "Herbs", "Lime"],
-                "fact": "Phở originated in Northern Vietnam in the early 20th century.\nThe name 'phở' comes from the French dish 'pot-au-feu'.\nIt's typically eaten for breakfast but enjoyed any time of day!"
-            },
-            "Bánh Mì": {
-                "ingredients": ["Bread", "Pâté", "Pork", "Pickle", "Cilantro"],
-                "fact": "Bánh Mì is a fusion of French and Vietnamese cuisine.\nThe crispy baguette was introduced during French colonization.\nIt's been called the world's best sandwich by many food critics!"
-            },
-            "Bún Chả": {
-                "ingredients": ["Noodles", "Pork", "Fish Sauce", "Herbs", "Pickle"],
-                "fact": "Bún Chả is a Hanoi specialty dish.\nPresident Obama and Anthony Bourdain famously ate it together.\nThe grilled pork is served with a sweet-sour dipping sauce!"
-            },
-            "Gỏi Cuốn": {
-                "ingredients": ["Rice Paper", "Shrimp", "Pork", "Herbs", "Noodles"],
-                "fact": "Gỏi Cuốn means 'salad rolls' in Vietnamese.\nThey're also called 'summer rolls' and served fresh, not fried.\nEach roll is wrapped by hand and dipped in peanut sauce!"
-            }
+            "Phở": ["Noodles", "Broth", "Beef", "Herbs", "Lime"],
+            "Bánh Mì": ["Bread", "Pork", "Pickle", "Cilantro"],
+            "Bún Chả": ["Noodles", "Pork", "Fish Sauce", "Herbs"],
+            "Gỏi Cuốn": ["Rice Paper", "Shrimp", "Herbs", "Noodles"],
         }
         
-        self.current_order = None
-        self.ingredients = []
-        self.bowl_rect = pygame.Rect(700, 400, 250, 250)
-        self.show_fact = False
-        self.fact_timer = 0
+        # Obstacles (walls/counters)
+        self.obstacles = [
+            pygame.Rect(30, 280, 400, 20),  # Top counter
+            pygame.Rect(30, 630, 450, 20),  # Bottom counter
+        ]
         
-        # Buttons
-        self.start_button = Button(350, 300, 300, 80, "Start Cooking!", GREEN, DARK_GREEN)
-        self.menu_button = Button(400, 550, 200, 60, "Main Menu", LIGHT_BROWN, BROWN)
-        self.next_button = Button(400, 550, 200, 60, "Next Order", GREEN, DARK_GREEN)
+        # UI message
+        self.message = ""
+        self.message_timer = 0
         
-    def create_new_order(self):
-        dish_name = random.choice(list(self.dishes.keys()))
-        dish_data = self.dishes[dish_name]
-        self.current_order = Order(dish_name, dish_data["ingredients"], dish_data["fact"])
+    def spawn_customer(self):
+        if len(self.customers) < 3:
+            names = ["Minh", "Linh", "Hùng", "Mai", "Tuấn", "Hoa"]
+            colors = [RED, GREEN, LIGHT_BLUE, YELLOW, ORANGE]
+            
+            name = random.choice(names)
+            color = random.choice(colors)
+            dish_name = random.choice(list(self.dishes.keys()))
+            order = self.dishes[dish_name]
+            
+            x = 900
+            y = 150 + len(self.customers) * 200
+            
+            customer = Customer(name, color, order, x, y)
+            self.customers.append(customer)
+            
+    def check_order_match(self, ingredients, customer_order):
+        return set(ingredients) == set(customer_order)
         
-        # Create ingredient buttons
-        self.ingredients = []
-        all_possible_ingredients = ["Noodles", "Broth", "Beef", "Pork", "Shrimp", 
-                                   "Herbs", "Lime", "Pickle", "Cilantro", "Fish Sauce",
-                                   "Rice Paper", "Bread", "Pâté"]
-        
-        # Shuffle and pick ingredients (including required ones)
-        available = dish_data["ingredients"] + random.sample(
-            [i for i in all_possible_ingredients if i not in dish_data["ingredients"]], 
-            min(3, len(all_possible_ingredients) - len(dish_data["ingredients"]))
-        )
-        random.shuffle(available)
-        
-        colors = [RED, GREEN, BROWN, YELLOW, DARK_GREEN, LIGHT_BROWN]
-        
-        for i, ingredient in enumerate(available):
-            x = 50 + (i % 4) * 90
-            y = 400 + (i // 4) * 90
-            color = colors[i % len(colors)]
-            self.ingredients.append(Ingredient(ingredient, x, y, color))
-        
-        self.show_fact = False
+    def show_message(self, text):
+        self.message = text
+        self.message_timer = 120  # 2 seconds
         
     def draw_menu(self):
         self.screen.fill(CREAM)
         
         # Title
         title = self.title_font.render("Nhà Hàng Việt Nam", True, RED)
-        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 100))
+        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 150))
         self.screen.blit(title, title_rect)
         
         subtitle = self.font.render("Vietnamese Restaurant Game", True, BLACK)
-        subtitle_rect = subtitle.get_rect(center=(SCREEN_WIDTH // 2, 160))
+        subtitle_rect = subtitle.get_rect(center=(SCREEN_WIDTH // 2, 220))
         self.screen.blit(subtitle, subtitle_rect)
         
         # Instructions
         instructions = [
-            "Welcome to our Vietnamese restaurant!",
-            "Drag ingredients to the bowl to prepare dishes.",
-            "Learn fun facts about Vietnamese cuisine!",
-            "Complete orders to earn points!"
+            "CONTROLS:",
+            "WASD or Arrow Keys - Move",
+            "SPACE - Pick up ingredient / Add to station / Start cooking",
+            "",
+            "HOW TO PLAY:",
+            "1. Check what customers want (right side)",
+            "2. Walk to ingredient stations and press SPACE to pick up",
+            "3. Bring ingredients to PREP station and add them",
+            "4. Move dish to COOK station and start cooking",
+            "5. When done, take to SERVE station and serve customers!",
+            "",
+            "Keep customers happy before their patience runs out!",
+            "",
+            "Press SPACE to Start!"
         ]
         
         for i, line in enumerate(instructions):
             text = self.small_font.render(line, True, BLACK)
-            text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, 220 + i * 30))
+            text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, 300 + i * 25))
             self.screen.blit(text, text_rect)
-        
-        # Start button
-        self.start_button.draw(self.screen, self.font)
-        
-        # Credits
-        credits = self.small_font.render("Celebrating Vietnamese Culture Through Food", True, DARK_GREEN)
-        credits_rect = credits.get_rect(center=(SCREEN_WIDTH // 2, 650))
-        self.screen.blit(credits, credits_rect)
         
     def draw_game(self):
         self.screen.fill(LIGHT_BLUE)
+        
+        # Draw floor
+        pygame.draw.rect(self.screen, CREAM, (0, 200, 500, 500))
         
         # Draw score
         score_text = self.font.render(f"Score: {self.score}", True, BLACK)
@@ -227,89 +364,111 @@ class VietnameseRestaurantGame:
         orders_text = self.small_font.render(f"Orders: {self.orders_completed}", True, BLACK)
         self.screen.blit(orders_text, (20, 60))
         
-        # Draw current order
-        if self.current_order:
-            order_text = self.title_font.render(f"Make: {self.current_order.dish_name}", True, RED)
-            self.screen.blit(order_text, (300, 20))
+        # Draw ingredient stations
+        for station in self.ingredient_stations:
+            station.draw(self.screen, self.small_font)
+        
+        # Draw cooking stations
+        self.prep_station.draw(self.screen, self.font, self.small_font)
+        self.cook_station.draw(self.screen, self.font, self.small_font)
+        self.serve_station.draw(self.screen, self.font, self.small_font)
+        
+        # Draw customers
+        for customer in self.customers:
+            customer.draw(self.screen, self.font, self.small_font)
+        
+        # Draw player
+        self.player.draw(self.screen, self.small_font)
+        
+        # Draw controls hint
+        controls = self.small_font.render("WASD: Move | SPACE: Interact", True, BLACK)
+        self.screen.blit(controls, (20, 100))
+        
+        # Draw interaction hints
+        if self.prep_station.is_player_near(self.player):
+            hint = self.small_font.render("[SPACE] Add ingredient / Move to cook", True, WHITE)
+            pygame.draw.rect(self.screen, BLACK, (self.prep_station.rect.x, self.prep_station.rect.y - 25, 300, 20))
+            self.screen.blit(hint, (self.prep_station.rect.x + 5, self.prep_station.rect.y - 23))
             
-            required_text = self.small_font.render("Ingredients needed:", True, BLACK)
-            self.screen.blit(required_text, (300, 90))
+        if self.cook_station.is_player_near(self.player):
+            hint = self.small_font.render("[SPACE] Start cooking / Move to serve", True, WHITE)
+            pygame.draw.rect(self.screen, BLACK, (self.cook_station.rect.x, self.cook_station.rect.y - 25, 300, 20))
+            self.screen.blit(hint, (self.cook_station.rect.x + 5, self.cook_station.rect.y - 23))
             
-            for i, ingredient in enumerate(self.current_order.required_ingredients):
-                check = "✓" if ingredient in self.current_order.added_ingredients else "○"
-                ing_text = self.small_font.render(f"{check} {ingredient}", True, DARK_GREEN if ingredient in self.current_order.added_ingredients else BLACK)
-                self.screen.blit(ing_text, (320, 120 + i * 30))
+        if self.serve_station.is_player_near(self.player):
+            hint = self.small_font.render("[SPACE] Serve to customer", True, WHITE)
+            pygame.draw.rect(self.screen, BLACK, (self.serve_station.rect.x, self.serve_station.rect.y - 25, 250, 20))
+            self.screen.blit(hint, (self.serve_station.rect.x + 5, self.serve_station.rect.y - 23))
         
-        # Draw bowl
-        pygame.draw.ellipse(self.screen, WHITE, self.bowl_rect)
-        pygame.draw.ellipse(self.screen, BLACK, self.bowl_rect, 3)
-        bowl_label = self.font.render("Bowl", True, BLACK)
-        self.screen.blit(bowl_label, (self.bowl_rect.centerx - 30, self.bowl_rect.centery - 15))
+        for station in self.ingredient_stations:
+            if station.is_player_near(self.player) and not self.player.held_ingredient:
+                hint = self.small_font.render(f"[SPACE] Pick up", True, WHITE)
+                pygame.draw.rect(self.screen, BLACK, (station.rect.x, station.rect.y - 25, 150, 20))
+                self.screen.blit(hint, (station.rect.x + 5, station.rect.y - 23))
         
-        # Draw ingredients
-        for ingredient in self.ingredients:
-            ingredient.draw(self.screen, self.small_font)
+        # Draw message
+        if self.message_timer > 0:
+            message_surface = self.font.render(self.message, True, WHITE)
+            message_rect = message_surface.get_rect(center=(SCREEN_WIDTH // 2, 150))
+            pygame.draw.rect(self.screen, BLACK, message_rect.inflate(20, 10), border_radius=10)
+            self.screen.blit(message_surface, message_rect)
+            self.message_timer -= 1
         
-        # Instructions
-        inst_text = self.small_font.render("Drag ingredients to the bowl!", True, BLACK)
-        self.screen.blit(inst_text, (50, 350))
+    def handle_interaction(self):
+        # Pick up ingredient
+        for station in self.ingredient_stations:
+            if station.is_player_near(self.player) and not self.player.held_ingredient:
+                self.player.held_ingredient = station.ingredient_name
+                self.show_message(f"Picked up {station.ingredient_name}!")
+                return
         
-        # Show completion message or fact
-        if self.show_fact:
-            # Draw fact box
-            fact_box = pygame.Rect(150, 200, 700, 300)
-            pygame.draw.rect(self.screen, CREAM, fact_box, border_radius=15)
-            pygame.draw.rect(self.screen, RED, fact_box, 5, border_radius=15)
-            
-            # Title
-            if self.current_order.is_correct():
-                title = self.title_font.render("Perfect! 🎉", True, GREEN)
-                self.screen.blit(title, (fact_box.centerx - 100, fact_box.y + 20))
+        # Interact with prep station
+        if self.prep_station.is_player_near(self.player):
+            if self.player.held_ingredient:
+                self.prep_station.add_ingredient(self.player.held_ingredient)
+                self.show_message(f"Added {self.player.held_ingredient} to prep!")
+                self.player.held_ingredient = None
+            elif self.prep_station.ingredients and not self.cook_station.ingredients:
+                # Move to cook station
+                self.cook_station.ingredients = self.prep_station.ingredients[:]
+                self.prep_station.clear()
+                self.show_message("Moved to cook station!")
+            return
+        
+        # Interact with cook station
+        if self.cook_station.is_player_near(self.player):
+            if not self.cook_station.cooking and self.cook_station.ingredients:
+                self.cook_station.start_cooking()
+                self.show_message("Started cooking!")
+            elif not self.cook_station.cooking and not self.cook_station.ingredients:
+                self.show_message("Station is empty!")
+            elif self.cook_station.cooking:
+                self.show_message("Still cooking...")
+            return
+        
+        # Interact with serve station
+        if self.serve_station.is_player_near(self.player):
+            if self.serve_station.ingredients:
+                # Try to serve to a customer
+                for customer in self.customers[:]:
+                    if not customer.leaving and not customer.served:
+                        if self.check_order_match(self.serve_station.ingredients, customer.order):
+                            # Correct order!
+                            patience_bonus = int(customer.patience)
+                            self.score += 100 + patience_bonus
+                            self.orders_completed += 1
+                            self.customers.remove(customer)
+                            self.serve_station.clear()
+                            self.show_message(f"Perfect! +{100 + patience_bonus} points!")
+                            return
+                        else:
+                            # Wrong order
+                            self.show_message("Wrong order for this customer!")
+                            return
+                self.show_message("No matching customer order!")
             else:
-                title = self.title_font.render("Not quite right!", True, RED)
-                self.screen.blit(title, (fact_box.centerx - 150, fact_box.y + 20))
-            
-            # Fun fact
-            fact_title = self.font.render("Fun Fact:", True, RED)
-            self.screen.blit(fact_title, (fact_box.x + 20, fact_box.y + 90))
-            
-            # Split fact into lines
-            lines = self.current_order.fun_fact.split('\n')
-            for i, line in enumerate(lines):
-                fact_text = self.small_font.render(line, True, BLACK)
-                self.screen.blit(fact_text, (fact_box.x + 20, fact_box.y + 130 + i * 30))
-            
-            # Next button
-            self.next_button.draw(self.screen, self.font)
-        
-    def handle_menu_events(self, event):
-        if self.start_button.handle_event(event):
-            self.state = GAME
-            self.create_new_order()
-            
-    def handle_game_events(self, event):
-        if self.show_fact:
-            if self.next_button.handle_event(event):
-                self.create_new_order()
-        else:
-            for ingredient in self.ingredients:
-                ingredient.handle_event(event)
-                
-                # Check if ingredient is dropped in bowl
-                if event.type == pygame.MOUSEBUTTONUP:
-                    if ingredient.rect.colliderect(self.bowl_rect):
-                        self.current_order.add_ingredient(ingredient.name)
-                        self.ingredients.remove(ingredient)
-                        
-                        # Check if order is complete
-                        if len(self.current_order.added_ingredients) == len(self.current_order.required_ingredients):
-                            self.show_fact = True
-                            if self.current_order.is_correct():
-                                self.score += 100
-                                self.orders_completed += 1
-                            else:
-                                self.score += 20
-                        break
+                self.show_message("Serve station is empty!")
+            return
     
     def run(self):
         while self.running:
@@ -317,10 +476,39 @@ class VietnameseRestaurantGame:
                 if event.type == pygame.QUIT:
                     self.running = False
                     
-                if self.state == MENU:
-                    self.handle_menu_events(event)
-                elif self.state == GAME:
-                    self.handle_game_events(event)
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        if self.state == MENU:
+                            self.state = GAME
+                            self.spawn_customer()
+                        elif self.state == GAME:
+                            self.handle_interaction()
+            
+            if self.state == GAME:
+                # Update player movement
+                keys = pygame.key.get_pressed()
+                self.player.move(keys, self.obstacles)
+                
+                # Update cooking
+                if self.cook_station.update():
+                    # Cooking done, move to serve station
+                    if not self.serve_station.ingredients:
+                        self.serve_station.ingredients = self.cook_station.ingredients[:]
+                        self.cook_station.clear()
+                        self.show_message("Dish ready to serve!")
+                
+                # Update customers
+                for customer in self.customers[:]:
+                    customer.update()
+                    if customer.leaving:
+                        self.customers.remove(customer)
+                        self.show_message("Customer left! :(")
+                
+                # Spawn new customers
+                self.customer_spawn_timer += 1
+                if self.customer_spawn_timer >= self.customer_spawn_delay:
+                    self.spawn_customer()
+                    self.customer_spawn_timer = 0
             
             # Draw
             if self.state == MENU:
