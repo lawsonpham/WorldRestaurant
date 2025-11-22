@@ -334,7 +334,7 @@ class VietnameseRestaurantGame:
             "Noodles": "resources/sprites/noodles.png",
             "Broth": "resources/sprites/cooking_pho_pot.png",
             "Beef": "resources/sprites/raw_beef.png",
-            "Pork": "resources/sprites/chicken_slices.png",  # Using chicken as substitute
+            "Chicken": "resources/sprites/chicken_slices.png",  # Using chicken as substitute
             "Shrimp": "resources/sprites/shrimp.png",
             "Herbs": "resources/sprites/basil.png",
             "Lime": "resources/sprites/lime_wedges.png",
@@ -350,7 +350,7 @@ class VietnameseRestaurantGame:
             IngredientStation(50, 300, "Noodles", YELLOW, sprite_map.get("Noodles")),
             IngredientStation(150, 300, "Broth", BROWN, sprite_map.get("Broth")),
             IngredientStation(250, 300, "Beef", RED, sprite_map.get("Beef")),
-            IngredientStation(350, 300, "Pork", LIGHT_BROWN, sprite_map.get("Pork")),
+            IngredientStation(350, 300, "Chicken", LIGHT_BROWN, sprite_map.get("Chicken")),
             IngredientStation(50, 400, "Shrimp", ORANGE, sprite_map.get("Shrimp")),
             IngredientStation(150, 400, "Herbs", GREEN, sprite_map.get("Herbs")),
             IngredientStation(250, 400, "Lime", DARK_GREEN, sprite_map.get("Lime")),
@@ -374,8 +374,8 @@ class VietnameseRestaurantGame:
         # Dishes
         self.dishes = {
             "Phở": ["Noodles", "Broth", "Beef", "Herbs", "Lime"],
-            "Bánh Mì": ["Bread", "Pork", "Jalapeno", "Cilantro"],
-            "Bún Chả": ["Noodles", "Pork", "Fish Sauce", "Herbs"],
+            "Bánh Mì": ["Bread", "Chicken", "Jalapeno", "Cilantro"],
+            "Bún Chả": ["Noodles", "Chicken", "Fish Sauce", "Herbs"],
             "Gỏi Cuốn": ["Rice Paper", "Shrimp", "Herbs", "Noodles"],
         }
         
