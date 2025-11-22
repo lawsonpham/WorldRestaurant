@@ -338,7 +338,7 @@ class VietnameseRestaurantGame:
             "Shrimp": "resources/sprites/shrimp.png",
             "Herbs": "resources/sprites/basil.png",
             "Lime": "resources/sprites/lime_wedges.png",
-            "Pickle": "resources/sprites/sliced_jalapeno.png",
+            "Jalapeno": "resources/sprites/sliced_jalapeno.png",
             "Cilantro": "resources/sprites/cilantro.png",
             "Rice Paper": "resources/sprites/fresh_spring_rolls.png",
             "Bread": "resources/sprites/banh_mi_sandwich.png",
@@ -354,7 +354,7 @@ class VietnameseRestaurantGame:
             IngredientStation(50, 400, "Shrimp", ORANGE, sprite_map.get("Shrimp")),
             IngredientStation(150, 400, "Herbs", GREEN, sprite_map.get("Herbs")),
             IngredientStation(250, 400, "Lime", DARK_GREEN, sprite_map.get("Lime")),
-            IngredientStation(350, 400, "Pickle", YELLOW, sprite_map.get("Pickle")),
+            IngredientStation(350, 400, "Jalapeno", YELLOW, sprite_map.get("Jalapeno")),
             IngredientStation(50, 500, "Cilantro", GREEN, sprite_map.get("Cilantro")),
             IngredientStation(150, 500, "Rice Paper", WHITE, sprite_map.get("Rice Paper")),
             IngredientStation(250, 500, "Bread", LIGHT_BROWN, sprite_map.get("Bread")),
@@ -374,7 +374,7 @@ class VietnameseRestaurantGame:
         # Dishes
         self.dishes = {
             "Phở": ["Noodles", "Broth", "Beef", "Herbs", "Lime"],
-            "Bánh Mì": ["Bread", "Pork", "Pickle", "Cilantro"],
+            "Bánh Mì": ["Bread", "Pork", "Jalapeno", "Cilantro"],
             "Bún Chả": ["Noodles", "Pork", "Fish Sauce", "Herbs"],
             "Gỏi Cuốn": ["Rice Paper", "Shrimp", "Herbs", "Noodles"],
         }
