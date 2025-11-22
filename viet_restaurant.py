@@ -48,7 +48,7 @@ class Player:
             except:
                 self.sprite = None
         
-    def move(self, keys, obstacles):
+    def move(self, keys):
         old_x, old_y = self.x, self.y
         
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
@@ -64,14 +64,6 @@ class Player:
         self.rect.x = self.x
         self.rect.y = self.y
         
-        # Check collisions
-        for obstacle in obstacles:
-            if self.rect.colliderect(obstacle):
-                self.x = old_x
-                self.y = old_y
-                self.rect.x = self.x
-                self.rect.y = self.y
-                break
                 
     def draw(self, screen, font):
         if self.sprite:
@@ -366,11 +358,6 @@ class VietnameseRestaurantGame:
             "Gỏi Cuốn": ["Rice Paper", "Shrimp", "Herbs", "Noodles"],
         }
         
-        # Obstacles (walls/counters)
-        self.obstacles = [
-            pygame.Rect(30, 280, 400, 20),  # Top counter
-            pygame.Rect(30, 630, 450, 20),  # Bottom counter
-        ]
         
         # UI message
         self.message = ""
@@ -588,7 +575,7 @@ class VietnameseRestaurantGame:
             if self.state == GAME:
                 # Update player movement
                 keys = pygame.key.get_pressed()
-                self.player.move(keys, self.obstacles)
+                self.player.move(keys)
                 
                 # Update cooking
                 if self.cook_station.update():
