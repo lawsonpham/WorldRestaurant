@@ -377,29 +377,50 @@ class VietnameseRestaurantGame:
         self.message_timer = 0
         
     def spawn_customer(self):
-        if len(self.customers) < 3:
-            names = ["Minh", "Linh", "Hùng", "Mai", "Tuấn", "Hoa"]
-            colors = [RED, GREEN, LIGHT_BLUE, YELLOW, ORANGE]
-            sprites = [
-                "resources/sprites/customer1.png",
-                "resources/sprites/customer2.png",
-                "resources/sprites/customer3.png",
-                "resources/sprites/customer4.png",
-                "resources/sprites/customer5.png",
-                "resources/sprites/customer6.png"
-            ]
+        # FIXED: Enforce maximum 3 customers
+        if len(self.customers) >= 3:
+            return
 
-            name = random.choice(names)
-            color = random.choice(colors)
-            sprite = random.choice(sprites)
-            dish_name = random.choice(list(self.dishes.keys()))
-            order = self.dishes[dish_name]
+        names = ["Minh", "Linh", "Hùng", "Mai", "Tuấn", "Hoa"]
+        colors = [RED, GREEN, LIGHT_BLUE, YELLOW, ORANGE]
+        sprites = [
+            "resources/sprites/customer1.png",
+            "resources/sprites/customer2.png",
+            "resources/sprites/customer3.png",
+            "resources/sprites/customer4.png",
+            "resources/sprites/customer5.png",
+            "resources/sprites/customer6.png"
+        ]
 
-            x = 900
-            y = 150 + len(self.customers) * 200
+        name = random.choice(names)
+        color = random.choice(colors)
+        sprite = random.choice(sprites)
+        dish_name = random.choice(list(self.dishes.keys()))
+        order = self.dishes[dish_name]
 
-            customer = Customer(name, color, order, x, y, sprite)
-            self.customers.append(customer)
+        # FIXED: Define distinct spawn positions to prevent overlap
+        spawn_positions = [
+            (900, 150),   # Position 1 (top)
+            (900, 350),   # Position 2 (middle)
+            (900, 550)    # Position 3 (bottom)
+        ]
+
+        # Get occupied positions
+        occupied_positions = set()
+        for customer in self.customers:
+            occupied_positions.add((customer.x, customer.y))
+
+        # Find available position
+        available_positions = [pos for pos in spawn_positions if pos not in occupied_positions]
+
+        if not available_positions:
+            return  # No available positions
+
+        # FIXED: Use first available position
+        x, y = available_positions[0]
+
+        customer = Customer(name, color, order, x, y, sprite)
+        self.customers.append(customer)
             
     def check_order_match(self, ingredients, customer_order):
         return set(ingredients) == set(customer_order)
