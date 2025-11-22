@@ -307,7 +307,15 @@ class VietnameseRestaurantGame:
         self.title_font = pygame.font.Font(None, 64)
         self.font = pygame.font.Font(None, 32)
         self.small_font = pygame.font.Font(None, 20)
-        
+
+        # Load start screen background
+        self.start_screen_bg = None
+        try:
+            self.start_screen_bg = pygame.image.load("resources/sprites/start_screen_bg.png")
+            self.start_screen_bg = pygame.transform.scale(self.start_screen_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
+        except:
+            self.start_screen_bg = None
+
         # Game state
         self.state = MENU
         self.score = 0
@@ -409,39 +417,58 @@ class VietnameseRestaurantGame:
         self.message_timer = 120  # 2 seconds
         
     def draw_menu(self):
-        self.screen.fill(CREAM)
-        
-        # Title
-        title = self.title_font.render("Nhà Hàng Việt Nam", True, RED)
+        # Draw background image or fallback
+        if self.start_screen_bg:
+            self.screen.blit(self.start_screen_bg, (0, 0))
+        else:
+            self.screen.fill(CREAM)
+
+        # Title - positioned in the decorative title area
+        title = self.title_font.render("Nhà Hàng Việt Nam", True, (255, 215, 0))
+        title_shadow = self.title_font.render("Nhà Hàng Việt Nam", True, (139, 90, 43))
         title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 150))
+        # Shadow effect
+        self.screen.blit(title_shadow, (title_rect.x + 3, title_rect.y + 3))
         self.screen.blit(title, title_rect)
-        
-        subtitle = self.font.render("Vietnamese Restaurant Game", True, BLACK)
-        subtitle_rect = subtitle.get_rect(center=(SCREEN_WIDTH // 2, 220))
+
+        subtitle = self.font.render("Vietnamese Restaurant Game", True, (255, 255, 255))
+        subtitle_shadow = self.font.render("Vietnamese Restaurant Game", True, (100, 60, 20))
+        subtitle_rect = subtitle.get_rect(center=(SCREEN_WIDTH // 2, 200))
+        self.screen.blit(subtitle_shadow, (subtitle_rect.x + 2, subtitle_rect.y + 2))
         self.screen.blit(subtitle, subtitle_rect)
-        
-        # Instructions
+
+        # Instructions - positioned in the white instruction panel
         instructions = [
-            "CONTROLS:",
-            "WASD or Arrow Keys - Move",
-            "SPACE - Pick up ingredient / Add to station / Start cooking",
-            "",
-            "HOW TO PLAY:",
-            "1. Check what customers want (right side)",
-            "2. Walk to ingredient stations and press SPACE to pick up",
-            "3. Bring ingredients to PREP station and add them",
-            "4. Move dish to COOK station and start cooking",
-            "5. When done, take to SERVE station and serve customers!",
-            "",
-            "Keep customers happy before their patience runs out!",
-            "",
-            "Press SPACE to Start!"
+            ("CONTROLS:", True),
+            ("WASD or Arrow Keys - Move", False),
+            ("SPACE - Pick up ingredient / Add to station / Start cooking", False),
+            ("", False),
+            ("HOW TO PLAY:", True),
+            ("1. Check what customers want (right side)", False),
+            ("2. Walk to ingredient stations and press SPACE to pick up", False),
+            ("3. Bring ingredients to PREP station and add them", False),
+            ("4. Move dish to COOK station and start cooking", False),
+            ("5. When done, take to SERVE station and serve customers!", False),
+            ("", False),
+            ("Keep customers happy before their patience runs out!", False),
         ]
-        
-        for i, line in enumerate(instructions):
-            text = self.small_font.render(line, True, BLACK)
-            text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, 300 + i * 25))
+
+        y_offset = 290
+        for line, is_header in instructions:
+            if is_header:
+                text = self.font.render(line, True, (220, 20, 60))  # Red for headers
+            else:
+                text = self.small_font.render(line, True, (60, 40, 20))  # Brown for text
+            text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
             self.screen.blit(text, text_rect)
+            y_offset += 25 if not is_header else 30
+
+        # "Press SPACE to Start" - positioned on the wooden sign
+        start_text = self.title_font.render("Press SPACE to Start!", True, (255, 215, 0))
+        start_shadow = self.title_font.render("Press SPACE to Start!", True, (80, 50, 20))
+        start_rect = start_text.get_rect(center=(SCREEN_WIDTH // 2, 720))
+        self.screen.blit(start_shadow, (start_rect.x + 2, start_rect.y + 2))
+        self.screen.blit(start_text, start_rect)
         
     def draw_game(self):
         self.screen.fill(LIGHT_BLUE)
