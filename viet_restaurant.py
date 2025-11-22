@@ -228,8 +228,8 @@ class Customer:
         self.order = order  # List of required ingredients
         self.x = x
         self.y = y
-        self.patience = 100.0
-        self.max_patience = 100.0
+        self.patience = 200.0
+        self.max_patience = 200.0
         self.served = False
         self.leaving = False
         self.rect = pygame.Rect(x, y, 60, 80)
