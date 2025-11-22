@@ -285,8 +285,8 @@ class Customer:
         patience_percent = self.patience / self.max_patience
         bar_color = GREEN if patience_percent > 0.5 else YELLOW if patience_percent > 0.25 else RED
         
-        pygame.draw.rect(screen, GRAY, (bubble_x + 5, bubble_y + bubble_height - 20, bar_width, 15))
-        pygame.draw.rect(screen, bar_color, (bubble_x + 5, bubble_y + bubble_height - 20, bar_width * patience_percent, 15))
+        pygame.draw.rect(screen, GRAY, (bubble_x - 100, bubble_y + bubble_height, bar_width, 15))
+        pygame.draw.rect(screen, bar_color, (bubble_x - 100, bubble_y + bubble_height, bar_width * patience_percent, 15))
 
 class VietnameseRestaurantGame:
     def __init__(self):
@@ -356,7 +356,7 @@ class VietnameseRestaurantGame:
         # Customers
         self.customers = []
         self.customer_spawn_timer = 0
-        self.customer_spawn_delay = 300  # 5 seconds
+        self.customer_spawn_delay = 600  # 5 seconds
         
         # Dishes
         self.dishes = {
