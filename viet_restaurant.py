@@ -2,6 +2,7 @@ import pygame
 import sys
 import random
 import math
+from music_manager import MusicManager
 
 # Initialize Pygame
 pygame.init()
@@ -300,6 +301,10 @@ class VietnameseRestaurantGame:
         self.font = pygame.font.Font(None, 32)
         self.small_font = pygame.font.Font(None, 20)
 
+        # --- MUSIC SETUP ---
+        self.music_manager = MusicManager() # <--- Add this
+        self.music_manager.start_music()    # <--- Add this
+
         # Load start screen background
         self.start_screen_bg = None
         try:
@@ -587,6 +592,9 @@ class VietnameseRestaurantGame:
     
     def run(self):
         while self.running:
+            # Check music
+            self.music_manager.update()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
