@@ -34,8 +34,8 @@ class Player:
     def __init__(self, x, y, sprite_path=None):
         self.x = x
         self.y = y
-        self.width = 40
-        self.height = 60
+        self.width = 70
+        self.height = 90
         self.speed = 5
         self.color = ORANGE
         self.rect = pygame.Rect(x, y, self.width, self.height)
