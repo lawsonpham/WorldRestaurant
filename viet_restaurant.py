@@ -313,6 +313,14 @@ class VietnameseRestaurantGame:
         except:
             self.start_screen_bg = None
 
+        # FIXED: Load restaurant background
+        self.restaurant_bg = None
+        try:
+            self.restaurant_bg = pygame.image.load("resources/sprites/restaurant_background.png")
+            self.restaurant_bg = pygame.transform.scale(self.restaurant_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
+        except:
+            self.restaurant_bg = None
+
         # Game state
         self.state = MENU
         self.score = 0
@@ -484,10 +492,14 @@ class VietnameseRestaurantGame:
         self.screen.blit(start_text, start_rect)
         
     def draw_game(self):
-        self.screen.fill(LIGHT_BLUE)
-        
-        # Draw floor
-        pygame.draw.rect(self.screen, CREAM, (0, 200, 500, 550))
+        # FIXED: Draw authentic Vietnamese restaurant background
+        if self.restaurant_bg:
+            self.screen.blit(self.restaurant_bg, (0, 0))
+        else:
+            # Fallback to original
+            self.screen.fill(LIGHT_BLUE)
+            # Draw floor
+            pygame.draw.rect(self.screen, CREAM, (0, 200, 500, 550))
         
         # Draw score
         score_text = self.font.render(f"Score: {self.score}", True, BLACK)
