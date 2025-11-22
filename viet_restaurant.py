@@ -2,6 +2,7 @@ import pygame
 import sys
 import random
 import math
+import os  # Added os to handle file paths
 
 # Initialize Pygame
 pygame.init()
@@ -39,8 +40,8 @@ class Player:
         self.color = ORANGE
         self.rect = pygame.Rect(x, y, self.width, self.height)
         self.held_ingredient = None
-        self.held_ingredient_sprite = None
         self.sprite = None
+
         if sprite_path:
             try:
                 self.sprite = pygame.image.load(sprite_path)
@@ -50,7 +51,7 @@ class Player:
         
     def move(self, keys):
         old_x, old_y = self.x, self.y
-        
+
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             self.x -= self.speed
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
@@ -59,11 +60,19 @@ class Player:
             self.y -= self.speed
         if keys[pygame.K_DOWN] or keys[pygame.K_s]:
             self.y += self.speed
-            
+
         # Update rect
         self.rect.x = self.x
         self.rect.y = self.y
         
+        # Check collisions
+        for obstacle in obstacles:
+            if self.rect.colliderect(obstacle):
+                self.x = old_x
+                self.y = old_y
+                self.rect.x = self.x
+                self.rect.y = self.y
+                break
                 
     def draw(self, screen, font):
         if self.sprite:
@@ -81,20 +90,10 @@ class Player:
 
         # Show held ingredient
         if self.held_ingredient:
-            if self.held_ingredient_sprite:
-                # Draw downscaled ingredient sprite
-                sprite_size = 30
-                sprite_x = self.rect.centerx - sprite_size // 2
-                sprite_y = self.rect.y - 40
-                screen.blit(self.held_ingredient_sprite, (sprite_x, sprite_y))
-                # Add a small border/background
-                pygame.draw.rect(screen, WHITE, (sprite_x - 2, sprite_y - 2, sprite_size + 4, sprite_size + 4), 2)
-            else:
-                # Fallback to text display
-                text = font.render(self.held_ingredient[:4], True, WHITE)
-                pygame.draw.circle(screen, GREEN, (self.rect.centerx, self.rect.y - 35), 15)
-                text_rect = text.get_rect(center=(self.rect.centerx, self.rect.y - 35))
-                screen.blit(text, text_rect)
+            text = font.render(self.held_ingredient[:4], True, WHITE)
+            pygame.draw.circle(screen, GREEN, (self.rect.centerx, self.rect.y - 35), 15)
+            text_rect = text.get_rect(center=(self.rect.centerx, self.rect.y - 35))
+            screen.blit(text, text_rect)
 
 class IngredientStation:
     def __init__(self, x, y, ingredient_name, color, sprite_path=None):
@@ -106,13 +105,14 @@ class IngredientStation:
         self.ingredient_name = ingredient_name
         self.color = color
         self.sprite = None
+
         if sprite_path:
             try:
                 self.sprite = pygame.image.load(sprite_path)
                 self.sprite = pygame.transform.scale(self.sprite, (self.width, self.height))
             except:
                 self.sprite = None
-        
+
     def draw(self, screen, font):
         if self.sprite:
             # Draw sprite
@@ -123,57 +123,51 @@ class IngredientStation:
             # Fallback to colored rectangles
             pygame.draw.rect(screen, self.color, self.rect, border_radius=10)
             pygame.draw.rect(screen, BLACK, self.rect, 3, border_radius=10)
+
             text = font.render(self.ingredient_name[:6], True, WHITE)
             text_rect = text.get_rect(center=self.rect.center)
             screen.blit(text, text_rect)
-        
+
     def is_player_near(self, player):
         return self.rect.colliderect(player.rect.inflate(20, 20))
 
 class CookingStation:
-    def __init__(self, x, y, station_type, sprite_path=None):
+    def __init__(self, x, y, station_type):
         self.x = x
         self.y = y
         self.width = 120
         self.height = 100
         self.rect = pygame.Rect(x, y, self.width, self.height)
-        self.station_type = station_type  # "prep", "cook", "serve"
+        self.station_type = station_type # "prep", "cook", "serve"
         self.ingredients = []
         self.cooking = False
         self.cook_timer = 0
-        self.cook_time = 180  # 3 seconds at 60 FPS
-        self.sprite = None
-        if sprite_path:
-            try:
-                self.sprite = pygame.image.load(sprite_path)
-                self.sprite = pygame.transform.scale(self.sprite, (self.width, self.height))
-            except:
-                self.sprite = None
-        
+        self.cook_time = 180 # 3 seconds at 60 FPS
+
     def add_ingredient(self, ingredient):
         if len(self.ingredients) < 5:
             self.ingredients.append(ingredient)
             return True
         return False
-        
+
     def start_cooking(self):
         if self.ingredients and not self.cooking:
             self.cooking = True
             self.cook_timer = 0
-            
+
     def update(self):
         if self.cooking:
             self.cook_timer += 1
             if self.cook_timer >= self.cook_time:
                 self.cooking = False
-                return True  # Cooking complete
+                return True # Cooking complete
         return False
-        
+
     def clear(self):
         self.ingredients = []
         self.cooking = False
         self.cook_timer = 0
-        
+
     def draw(self, screen, font, small_font):
         # Station background
         if self.station_type == "prep":
@@ -186,37 +180,25 @@ class CookingStation:
             color = GREEN
             label = "SERVE"
 
-        if self.sprite:
-            # Draw sprite
-            screen.blit(self.sprite, (self.rect.x, self.rect.y))
-            # Draw label on top
-            text = font.render(label, True, WHITE)
-            text_bg = pygame.Surface((text.get_width() + 6, text.get_height() + 2))
-            text_bg.fill(BLACK)
-            text_bg.set_alpha(180)
-            screen.blit(text_bg, (self.rect.x + 8, self.rect.y + 3))
-            screen.blit(text, (self.rect.x + 10, self.rect.y + 5))
-        else:
-            # Fallback to colored rectangles
-            pygame.draw.rect(screen, color, self.rect, border_radius=10)
-            pygame.draw.rect(screen, BLACK, self.rect, 3, border_radius=10)
+        pygame.draw.rect(screen, color, self.rect, border_radius=10)
+        pygame.draw.rect(screen, BLACK, self.rect, 3, border_radius=10)
 
-            # Label
-            text = font.render(label, True, WHITE)
-            screen.blit(text, (self.rect.x + 10, self.rect.y + 5))
-        
+        # Label
+        text = font.render(label, True, WHITE)
+        screen.blit(text, (self.rect.x + 10, self.rect.y + 5))
+
         # Show ingredients
         for i, ing in enumerate(self.ingredients):
             ing_text = small_font.render(ing[:4], True, BLACK)
             screen.blit(ing_text, (self.rect.x + 10 + (i % 3) * 30, self.rect.y + 35 + (i // 3) * 20))
-        
+
         # Cooking progress
         if self.cooking:
             progress = self.cook_timer / self.cook_time
             bar_width = self.width - 20
             pygame.draw.rect(screen, WHITE, (self.rect.x + 10, self.rect.bottom - 20, bar_width, 10))
             pygame.draw.rect(screen, YELLOW, (self.rect.x + 10, self.rect.bottom - 20, bar_width * progress, 10))
-            
+
     def is_player_near(self, player):
         return self.rect.colliderect(player.rect.inflate(20, 20))
 
@@ -224,7 +206,7 @@ class Customer:
     def __init__(self, name, color, order, x, y, sprite_path=None):
         self.name = name
         self.color = color
-        self.order = order  # List of required ingredients
+        self.order = order # List of required ingredients
         self.x = x
         self.y = y
         self.patience = 100.0
@@ -233,19 +215,20 @@ class Customer:
         self.leaving = False
         self.rect = pygame.Rect(x, y, 60, 80)
         self.sprite = None
+
         if sprite_path:
             try:
                 self.sprite = pygame.image.load(sprite_path)
                 self.sprite = pygame.transform.scale(self.sprite, (60, 80))
             except:
                 self.sprite = None
-        
+
     def update(self):
         if not self.served and not self.leaving:
             self.patience -= 0.05
             if self.patience <= 0:
                 self.leaving = True
-                
+
     def draw(self, screen, font, small_font):
         # Customer body
         if self.sprite:
@@ -254,37 +237,36 @@ class Customer:
             # Fallback to simple shapes
             pygame.draw.rect(screen, self.color, self.rect, border_radius=5)
             pygame.draw.circle(screen, self.color, (self.rect.centerx, self.rect.y - 10), 15)
-
             # Eyes
             pygame.draw.circle(screen, BLACK, (self.rect.centerx - 5, self.rect.y - 10), 3)
             pygame.draw.circle(screen, BLACK, (self.rect.centerx + 5, self.rect.y - 10), 3)
-        
+
         # Name
         name_text = small_font.render(self.name, True, BLACK)
         screen.blit(name_text, (self.rect.x, self.rect.bottom + 5))
-        
+
         # Order bubble
         bubble_x = self.rect.right + 10
         bubble_y = self.rect.y
         bubble_width = 150
         bubble_height = 100
-        
+
         pygame.draw.rect(screen, WHITE, (bubble_x, bubble_y, bubble_width, bubble_height), border_radius=10)
         pygame.draw.rect(screen, BLACK, (bubble_x, bubble_y, bubble_width, bubble_height), 2, border_radius=10)
-        
+
         # Order text
         order_text = small_font.render("Wants:", True, BLACK)
         screen.blit(order_text, (bubble_x + 5, bubble_y + 5))
-        
+
         for i, ingredient in enumerate(self.order):
             ing_text = small_font.render(f"• {ingredient[:6]}", True, DARK_GREEN)
             screen.blit(ing_text, (bubble_x + 5, bubble_y + 30 + i * 20))
-        
+
         # Patience bar
         bar_width = 100
         patience_percent = self.patience / self.max_patience
         bar_color = GREEN if patience_percent > 0.5 else YELLOW if patience_percent > 0.25 else RED
-        
+
         pygame.draw.rect(screen, GRAY, (bubble_x + 5, bubble_y + bubble_height - 20, bar_width, 15))
         pygame.draw.rect(screen, bar_color, (bubble_x + 5, bubble_y + bubble_height - 20, bar_width * patience_percent, 15))
 
@@ -294,17 +276,26 @@ class VietnameseRestaurantGame:
         pygame.display.set_caption("Nhà Hàng Việt Nam - Vietnamese Restaurant")
         self.clock = pygame.time.Clock()
         self.running = True
-        
+
         # Fonts
         self.title_font = pygame.font.Font(None, 64)
         self.font = pygame.font.Font(None, 32)
         self.small_font = pygame.font.Font(None, 20)
-        
+
+        # --- MUSIC PLAYER SETUP ---
+        # Define the playlist
+        self.music_tracks = ["clarity.ogg", "soft_spot.ogg", "con_gai_mien_tay.ogg"]
+        # Shuffle so it plays at random each launch
+        random.shuffle(self.music_tracks)
+        self.current_track_index = 0
+        # Start playing the first track
+        self.play_next_song()
+
         # Game state
         self.state = MENU
         self.score = 0
         self.orders_completed = 0
-        
+
         # Player
         self.player = Player(400, 400, "resources/sprites/guy-sprite.png")
 
@@ -313,7 +304,7 @@ class VietnameseRestaurantGame:
             "Noodles": "resources/sprites/noodles.png",
             "Broth": "resources/sprites/cooking_pho_pot.png",
             "Beef": "resources/sprites/raw_beef.png",
-            "Pork": "resources/sprites/chicken_slices.png",  # Using chicken as substitute
+            "Pork": "resources/sprites/chicken_slices.png", # Using chicken as substitute
             "Shrimp": "resources/sprites/shrimp.png",
             "Herbs": "resources/sprites/basil.png",
             "Lime": "resources/sprites/lime_wedges.png",
@@ -339,17 +330,17 @@ class VietnameseRestaurantGame:
             IngredientStation(250, 500, "Bread", LIGHT_BROWN, sprite_map.get("Bread")),
             IngredientStation(350, 500, "Fish Sauce", BROWN, sprite_map.get("Fish Sauce")),
         ]
-        
+
         # Cooking stations
-        self.prep_station = CookingStation(50, 650, "prep", "resources/sprites/prep_station.png")
-        self.cook_station = CookingStation(200, 650, "cook", "resources/sprites/cook_station.png")
-        self.serve_station = CookingStation(350, 650, "serve", "resources/sprites/serve_station.png")
-        
+        self.prep_station = CookingStation(50, 650, "prep")
+        self.cook_station = CookingStation(200, 650, "cook")
+        self.serve_station = CookingStation(350, 650, "serve")
+
         # Customers
         self.customers = []
         self.customer_spawn_timer = 0
-        self.customer_spawn_delay = 300  # 5 seconds
-        
+        self.customer_spawn_delay = 300 # 5 seconds
+
         # Dishes
         self.dishes = {
             "Phở": ["Noodles", "Broth", "Beef", "Herbs", "Lime"],
@@ -358,23 +349,39 @@ class VietnameseRestaurantGame:
             "Gỏi Cuốn": ["Rice Paper", "Shrimp", "Herbs", "Noodles"],
         }
         
+        # Obstacles (walls/counters)
+        self.obstacles = [
+            pygame.Rect(30, 280, 400, 20),  # Top counter
+            pygame.Rect(30, 630, 450, 20),  # Bottom counter
+        ]
         
         # UI message
         self.message = ""
         self.message_timer = 0
-        
+
+    def play_next_song(self):
+        """Helper function to play the next song in the playlist"""
+        try:
+            # Get the current song name
+            track_name = self.music_tracks[self.current_track_index]
+            # Build the full path to resources/audio/songname.ogg
+            track_path = os.path.join("resources", "audio", track_name)
+
+            print(f"Now playing: {track_name}")
+            pygame.mixer.music.load(track_path)
+            pygame.mixer.music.set_volume(0.4) # Set volume (0.0 to 1.0)
+            pygame.mixer.music.play()
+
+            # Update index for the next time this is called
+            self.current_track_index = (self.current_track_index + 1) % len(self.music_tracks)
+        except Exception as e:
+            print(f"Could not play music file {track_path}: {e}")
+
     def spawn_customer(self):
         if len(self.customers) < 3:
             names = ["Minh", "Linh", "Hùng", "Mai", "Tuấn", "Hoa"]
             colors = [RED, GREEN, LIGHT_BLUE, YELLOW, ORANGE]
-            sprites = [
-                "resources/sprites/customer1.png",
-                "resources/sprites/customer2.png",
-                "resources/sprites/customer3.png",
-                "resources/sprites/customer4.png",
-                "resources/sprites/customer5.png",
-                "resources/sprites/customer6.png"
-            ]
+            sprites = ["resources/sprites/guy-sprite.png", "resources/sprites/girl-sprite.png"]
 
             name = random.choice(names)
             color = random.choice(colors)
@@ -387,26 +394,26 @@ class VietnameseRestaurantGame:
 
             customer = Customer(name, color, order, x, y, sprite)
             self.customers.append(customer)
-            
+
     def check_order_match(self, ingredients, customer_order):
         return set(ingredients) == set(customer_order)
-        
+
     def show_message(self, text):
         self.message = text
-        self.message_timer = 120  # 2 seconds
-        
+        self.message_timer = 120 # 2 seconds
+
     def draw_menu(self):
         self.screen.fill(CREAM)
-        
+
         # Title
         title = self.title_font.render("Nhà Hàng Việt Nam", True, RED)
         title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 150))
         self.screen.blit(title, title_rect)
-        
+
         subtitle = self.font.render("Vietnamese Restaurant Game", True, BLACK)
         subtitle_rect = subtitle.get_rect(center=(SCREEN_WIDTH // 2, 220))
         self.screen.blit(subtitle, subtitle_rect)
-        
+
         # Instructions
         instructions = [
             "CONTROLS:",
@@ -424,67 +431,67 @@ class VietnameseRestaurantGame:
             "",
             "Press SPACE to Start!"
         ]
-        
+
         for i, line in enumerate(instructions):
             text = self.small_font.render(line, True, BLACK)
             text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, 300 + i * 25))
             self.screen.blit(text, text_rect)
-        
+
     def draw_game(self):
         self.screen.fill(LIGHT_BLUE)
-        
+
         # Draw floor
         pygame.draw.rect(self.screen, CREAM, (0, 200, 500, 500))
-        
+
         # Draw score
         score_text = self.font.render(f"Score: {self.score}", True, BLACK)
         self.screen.blit(score_text, (20, 20))
-        
+
         orders_text = self.small_font.render(f"Orders: {self.orders_completed}", True, BLACK)
         self.screen.blit(orders_text, (20, 60))
-        
+
         # Draw ingredient stations
         for station in self.ingredient_stations:
             station.draw(self.screen, self.small_font)
-        
+
         # Draw cooking stations
         self.prep_station.draw(self.screen, self.font, self.small_font)
         self.cook_station.draw(self.screen, self.font, self.small_font)
         self.serve_station.draw(self.screen, self.font, self.small_font)
-        
+
         # Draw customers
         for customer in self.customers:
             customer.draw(self.screen, self.font, self.small_font)
-        
+
         # Draw player
         self.player.draw(self.screen, self.small_font)
-        
+
         # Draw controls hint
         controls = self.small_font.render("WASD: Move | SPACE: Interact", True, BLACK)
         self.screen.blit(controls, (20, 100))
-        
+
         # Draw interaction hints
         if self.prep_station.is_player_near(self.player):
             hint = self.small_font.render("[SPACE] Add ingredient / Move to cook", True, WHITE)
             pygame.draw.rect(self.screen, BLACK, (self.prep_station.rect.x, self.prep_station.rect.y - 25, 300, 20))
             self.screen.blit(hint, (self.prep_station.rect.x + 5, self.prep_station.rect.y - 23))
-            
+
         if self.cook_station.is_player_near(self.player):
             hint = self.small_font.render("[SPACE] Start cooking / Move to serve", True, WHITE)
             pygame.draw.rect(self.screen, BLACK, (self.cook_station.rect.x, self.cook_station.rect.y - 25, 300, 20))
             self.screen.blit(hint, (self.cook_station.rect.x + 5, self.cook_station.rect.y - 23))
-            
+
         if self.serve_station.is_player_near(self.player):
             hint = self.small_font.render("[SPACE] Serve to customer", True, WHITE)
             pygame.draw.rect(self.screen, BLACK, (self.serve_station.rect.x, self.serve_station.rect.y - 25, 250, 20))
             self.screen.blit(hint, (self.serve_station.rect.x + 5, self.serve_station.rect.y - 23))
-        
+
         for station in self.ingredient_stations:
             if station.is_player_near(self.player) and not self.player.held_ingredient:
                 hint = self.small_font.render(f"[SPACE] Pick up", True, WHITE)
                 pygame.draw.rect(self.screen, BLACK, (station.rect.x, station.rect.y - 25, 150, 20))
                 self.screen.blit(hint, (station.rect.x + 5, station.rect.y - 23))
-        
+
         # Draw message
         if self.message_timer > 0:
             message_surface = self.font.render(self.message, True, WHITE)
@@ -492,37 +499,28 @@ class VietnameseRestaurantGame:
             pygame.draw.rect(self.screen, BLACK, message_rect.inflate(20, 10), border_radius=10)
             self.screen.blit(message_surface, message_rect)
             self.message_timer -= 1
-        
+
     def handle_interaction(self):
         # Pick up ingredient
         for station in self.ingredient_stations:
             if station.is_player_near(self.player) and not self.player.held_ingredient:
                 self.player.held_ingredient = station.ingredient_name
-                # Set the downscaled sprite
-                if station.sprite:
-                    try:
-                        self.player.held_ingredient_sprite = pygame.transform.scale(station.sprite, (30, 30))
-                    except:
-                        self.player.held_ingredient_sprite = None
-                else:
-                    self.player.held_ingredient_sprite = None
                 self.show_message(f"Picked up {station.ingredient_name}!")
                 return
-        
+
         # Interact with prep station
         if self.prep_station.is_player_near(self.player):
             if self.player.held_ingredient:
                 self.prep_station.add_ingredient(self.player.held_ingredient)
                 self.show_message(f"Added {self.player.held_ingredient} to prep!")
                 self.player.held_ingredient = None
-                self.player.held_ingredient_sprite = None
             elif self.prep_station.ingredients and not self.cook_station.ingredients:
                 # Move to cook station
                 self.cook_station.ingredients = self.prep_station.ingredients[:]
                 self.prep_station.clear()
                 self.show_message("Moved to cook station!")
             return
-        
+
         # Interact with cook station
         if self.cook_station.is_player_near(self.player):
             if not self.cook_station.cooking and self.cook_station.ingredients:
@@ -533,7 +531,7 @@ class VietnameseRestaurantGame:
             elif self.cook_station.cooking:
                 self.show_message("Still cooking...")
             return
-        
+
         # Interact with serve station
         if self.serve_station.is_player_near(self.player):
             if self.serve_station.ingredients:
@@ -557,13 +555,16 @@ class VietnameseRestaurantGame:
             else:
                 self.show_message("Serve station is empty!")
             return
-    
+
     def run(self):
         while self.running:
+            # Check if music has finished playing, if so, play next track
+            if not pygame.mixer.music.get_busy():
+                self.play_next_song()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-                    
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         if self.state == MENU:
@@ -571,11 +572,11 @@ class VietnameseRestaurantGame:
                             self.spawn_customer()
                         elif self.state == GAME:
                             self.handle_interaction()
-            
+
             if self.state == GAME:
                 # Update player movement
                 keys = pygame.key.get_pressed()
-                self.player.move(keys)
+                self.player.move(keys, self.obstacles)
                 
                 # Update cooking
                 if self.cook_station.update():
@@ -584,29 +585,29 @@ class VietnameseRestaurantGame:
                         self.serve_station.ingredients = self.cook_station.ingredients[:]
                         self.cook_station.clear()
                         self.show_message("Dish ready to serve!")
-                
+
                 # Update customers
                 for customer in self.customers[:]:
                     customer.update()
                     if customer.leaving:
                         self.customers.remove(customer)
                         self.show_message("Customer left! :(")
-                
+
                 # Spawn new customers
                 self.customer_spawn_timer += 1
                 if self.customer_spawn_timer >= self.customer_spawn_delay:
                     self.spawn_customer()
                     self.customer_spawn_timer = 0
-            
+
             # Draw
             if self.state == MENU:
                 self.draw_menu()
             elif self.state == GAME:
                 self.draw_game()
-                
+
             pygame.display.flip()
             self.clock.tick(FPS)
-        
+
         pygame.quit()
         sys.exit()
 
