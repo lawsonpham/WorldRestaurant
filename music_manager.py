@@ -5,7 +5,7 @@ import os
 class MusicManager:
     def __init__(self):
         # Define the playlist
-        self.music_tracks = ["clarity.ogg", "soft_spot.ogg", "con_gai_mien_tay.ogg"]
+        self.music_tracks = ["clarity.ogg", "soft_spot.ogg", "con_gai_mien_tay.ogg", "wantchu.ogg", "war.ogg"]
         self.current_track_index = 0
 
         # Shuffle so it plays at random each launch
