@@ -39,6 +39,8 @@ class Player:
         self.color = ORANGE
         self.rect = pygame.Rect(x, y, self.width, self.height)
         self.held_ingredient = None
+        self.holding_dish = False  # New: carrying completed dish
+        self.dish_ingredients = []  # What's in the dish
         
     def move(self, keys, obstacles):
         old_x, old_y = self.x, self.y
@@ -74,8 +76,18 @@ class Player:
         pygame.draw.circle(screen, BLACK, (self.rect.centerx - 5, self.rect.y - 10), 3)
         pygame.draw.circle(screen, BLACK, (self.rect.centerx + 5, self.rect.y - 10), 3)
         
-        # Show held ingredient
-        if self.held_ingredient:
+        # Show held ingredient or dish
+        if self.holding_dish:
+            # Draw dish plate
+            pygame.draw.ellipse(screen, WHITE, 
+                (self.rect.centerx - 20, self.rect.y - 40, 40, 20))
+            pygame.draw.ellipse(screen, BLACK, 
+                (self.rect.centerx - 20, self.rect.y - 40, 40, 20), 2)
+            # Draw "DISH" text
+            text = font.render("DISH", True, BLACK)
+            text_rect = text.get_rect(center=(self.rect.centerx, self.rect.y - 30))
+            screen.blit(text, text_rect)
+        elif self.held_ingredient:
             text = font.render(self.held_ingredient[:4], True, WHITE)
             pygame.draw.circle(screen, GREEN, (self.rect.centerx, self.rect.y - 35), 15)
             text_rect = text.get_rect(center=(self.rect.centerx, self.rect.y - 35))
@@ -228,6 +240,10 @@ class Customer:
         
         pygame.draw.rect(screen, GRAY, (bubble_x + 5, bubble_y + bubble_height - 20, bar_width, 15))
         pygame.draw.rect(screen, bar_color, (bubble_x + 5, bubble_y + bubble_height - 20, bar_width * patience_percent, 15))
+    
+    def is_player_near(self, player):
+        """Check if player is close enough to serve"""
+        return self.rect.inflate(40, 40).colliderect(player.rect)
 
 class VietnameseRestaurantGame:
     def __init__(self):
@@ -286,7 +302,6 @@ class VietnameseRestaurantGame:
         # Obstacles (walls/counters)
         self.obstacles = [
             pygame.Rect(30, 280, 400, 20),  # Top counter
-            pygame.Rect(30, 630, 450, 20),  # Bottom counter
         ]
         
         # UI message
@@ -332,14 +347,15 @@ class VietnameseRestaurantGame:
         instructions = [
             "CONTROLS:",
             "WASD or Arrow Keys - Move",
-            "SPACE - Pick up ingredient / Add to station / Start cooking",
+            "SPACE - Pick up ingredient / Add to station / Start cooking / Serve",
             "",
             "HOW TO PLAY:",
             "1. Check what customers want (right side)",
             "2. Walk to ingredient stations and press SPACE to pick up",
             "3. Bring ingredients to PREP station and add them",
-            "4. Move dish to COOK station and start cooking",
-            "5. When done, take to SERVE station and serve customers!",
+            "4. Move dish to COOK station and start cooking (watch progress!)",
+            "5. When done, go to SERVE station and pick up the dish",
+            "6. WALK TO THE CUSTOMER and press SPACE to serve them!",
             "",
             "Keep customers happy before their patience runs out!",
             "",
@@ -396,15 +412,22 @@ class VietnameseRestaurantGame:
             self.screen.blit(hint, (self.cook_station.rect.x + 5, self.cook_station.rect.y - 23))
             
         if self.serve_station.is_player_near(self.player):
-            hint = self.small_font.render("[SPACE] Serve to customer", True, WHITE)
-            pygame.draw.rect(self.screen, BLACK, (self.serve_station.rect.x, self.serve_station.rect.y - 25, 250, 20))
+            hint = self.small_font.render("[SPACE] Pick up dish", True, WHITE)
+            pygame.draw.rect(self.screen, BLACK, (self.serve_station.rect.x, self.serve_station.rect.y - 25, 200, 20))
             self.screen.blit(hint, (self.serve_station.rect.x + 5, self.serve_station.rect.y - 23))
         
         for station in self.ingredient_stations:
-            if station.is_player_near(self.player) and not self.player.held_ingredient:
+            if station.is_player_near(self.player) and not self.player.held_ingredient and not self.player.holding_dish:
                 hint = self.small_font.render(f"[SPACE] Pick up", True, WHITE)
                 pygame.draw.rect(self.screen, BLACK, (station.rect.x, station.rect.y - 25, 150, 20))
                 self.screen.blit(hint, (station.rect.x + 5, station.rect.y - 23))
+        
+        # Show hints for serving customers
+        for customer in self.customers:
+            if customer.is_player_near(self.player) and self.player.holding_dish:
+                hint = self.small_font.render("[SPACE] Serve customer", True, WHITE)
+                pygame.draw.rect(self.screen, BLACK, (customer.rect.x - 50, customer.rect.y - 25, 200, 20))
+                self.screen.blit(hint, (customer.rect.x - 45, customer.rect.y - 23))
         
         # Draw message
         if self.message_timer > 0:
@@ -415,16 +438,17 @@ class VietnameseRestaurantGame:
             self.message_timer -= 1
         
     def handle_interaction(self):
-        # Pick up ingredient
-        for station in self.ingredient_stations:
-            if station.is_player_near(self.player) and not self.player.held_ingredient:
-                self.player.held_ingredient = station.ingredient_name
-                self.show_message(f"Picked up {station.ingredient_name}!")
-                return
+        # Pick up ingredient from stations
+        if not self.player.holding_dish:
+            for station in self.ingredient_stations:
+                if station.is_player_near(self.player) and not self.player.held_ingredient:
+                    self.player.held_ingredient = station.ingredient_name
+                    self.show_message(f"Picked up {station.ingredient_name}!")
+                    return
         
         # Interact with prep station
         if self.prep_station.is_player_near(self.player):
-            if self.player.held_ingredient:
+            if self.player.held_ingredient and not self.player.holding_dish:
                 self.prep_station.add_ingredient(self.player.held_ingredient)
                 self.show_message(f"Added {self.player.held_ingredient} to prep!")
                 self.player.held_ingredient = None
@@ -446,29 +470,43 @@ class VietnameseRestaurantGame:
                 self.show_message("Still cooking...")
             return
         
-        # Interact with serve station
+        # Interact with serve station - PICK UP the dish
         if self.serve_station.is_player_near(self.player):
-            if self.serve_station.ingredients:
-                # Try to serve to a customer
-                for customer in self.customers[:]:
+            if self.serve_station.ingredients and not self.player.holding_dish:
+                # Pick up the completed dish
+                self.player.holding_dish = True
+                self.player.dish_ingredients = self.serve_station.ingredients[:]
+                self.serve_station.clear()
+                self.show_message("Picked up dish! Bring it to a customer!")
+                return
+            elif not self.serve_station.ingredients:
+                self.show_message("No dish ready yet!")
+                return
+        
+        # Serve to customers - walk up to them with the dish
+        if self.player.holding_dish:
+            for customer in self.customers[:]:
+                if customer.is_player_near(self.player):
                     if not customer.leaving and not customer.served:
-                        if self.check_order_match(self.serve_station.ingredients, customer.order):
+                        if self.check_order_match(self.player.dish_ingredients, customer.order):
                             # Correct order!
                             patience_bonus = int(customer.patience)
                             self.score += 100 + patience_bonus
                             self.orders_completed += 1
                             self.customers.remove(customer)
-                            self.serve_station.clear()
+                            self.player.holding_dish = False
+                            self.player.dish_ingredients = []
                             self.show_message(f"Perfect! +{100 + patience_bonus} points!")
                             return
                         else:
-                            # Wrong order
-                            self.show_message("Wrong order for this customer!")
+                            # Wrong order - customer refuses
+                            self.show_message(f"{customer.name}: That's not what I ordered!")
                             return
-                self.show_message("No matching customer order!")
-            else:
-                self.show_message("Serve station is empty!")
-            return
+            
+            # If holding dish but not near any customer
+            self.show_message("Walk up to a customer to serve them!")
+        else:
+            self.show_message("You need to pick up a dish first!")
     
     def run(self):
         while self.running:
@@ -491,11 +529,10 @@ class VietnameseRestaurantGame:
                 
                 # Update cooking
                 if self.cook_station.update():
-                    # Cooking done, move to serve station
-                    if not self.serve_station.ingredients:
-                        self.serve_station.ingredients = self.cook_station.ingredients[:]
-                        self.cook_station.clear()
-                        self.show_message("Dish ready to serve!")
+                    # Cooking done, move to serve station automatically
+                    self.serve_station.ingredients = self.cook_station.ingredients[:]
+                    self.cook_station.clear()
+                    self.show_message("Dish ready! Go to SERVE station to pick it up!")
                 
                 # Update customers
                 for customer in self.customers[:]:
