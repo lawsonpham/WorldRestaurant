@@ -1,8 +1,10 @@
-# Vietnamese Restaurant Game 🍜
+# Pho So 2 🍜
 
-A fun cooking game celebrating Vietnamese culture through food! Similar to Papa's Pizzeria, players prepare authentic Vietnamese dishes and learn interesting facts about each one.
+Welcome to **Pho So 2**, an exciting Vietnamese restaurant simulation game! Run your own Vietnamese kitchen, prepare authentic dishes, and keep your customers happy before their patience runs out!
 
-## How to Run
+## 🎮 How to Play
+
+### Getting Started
 
 1. **Install Python** (if you don't have it): Download from [python.org](https://python.org)
 
@@ -11,213 +13,88 @@ A fun cooking game celebrating Vietnamese culture through food! Similar to Papa'
    pip install pygame
    ```
 
-3. **Run the game**:
+3. **Install Pillow** (for graphics):
    ```bash
-   python vietnamese_restaurant.py
+   pip install Pillow
    ```
 
-## How to Play
-
-1. **Start the game** - Click "Start Cooking!" on the main menu
-2. **Read the order** - See which Vietnamese dish is requested
-3. **Check ingredients** - Review the list of required ingredients
-4. **Drag ingredients** - Drag and drop the correct ingredients into the bowl
-5. **Learn facts** - After completing each order, learn fun facts about the dish!
-6. **Earn points** - Get 100 points for perfect orders, 20 points for attempts
-
-## Current Dishes
-
-The game includes four authentic Vietnamese dishes:
-
-1. **Phở** - The iconic Vietnamese noodle soup
-2. **Bánh Mì** - Vietnamese sandwich with French influence
-3. **Bún Chả** - Grilled pork with noodles (Obama's favorite!)
-4. **Gỏi Cuốn** - Fresh spring rolls
-
-## Customization Ideas
-
-### Adding More Dishes
-
-To add new dishes, edit the `self.dishes` dictionary around line 110:
-
-```python
-"New Dish Name": {
-    "ingredients": ["Ingredient1", "Ingredient2", "Ingredient3"],
-    "fact": "Fun fact about this dish!\nYou can add multiple lines."
-}
-```
-
-### Adding More Ingredients
-
-Update the `all_possible_ingredients` list around line 181 to include new ingredients.
-
-### Changing Colors
-
-Modify the color constants at the top of the file (lines 15-24) to match your preferences.
-
-### Adjusting Difficulty
-
-- Make it easier: Reduce the number of wrong ingredients shown
-- Make it harder: Add more similar ingredients or time limits
-
-## Features to Add
-
-Here are some ideas for expanding the game:
-
-### Easy Additions:
-- **Timer**: Add a countdown for each order
-- **Lives**: Give players 3 chances before game over
-- **Sound effects**: Add cooking sounds and music
-- **More dishes**: Add Cơm Tấm, Cao Lầu, Chả Cá, etc.
-
-### Medium Additions:
-- **Cooking steps**: Add multiple stages (prep, cook, serve)
-- **Customer patience**: Visual indicator of waiting time
-- **Achievements**: Unlock badges for completing certain tasks
-- **High score**: Save and display best scores
-
-### Advanced Additions:
-- **Multiple stations**: Like Papa's Pizzeria (order station, cooking station, serving station)
-- **Upgrades**: Buy better equipment with earned points
-- **Story mode**: Progress through different restaurants
-- **Multiplayer**: Compete with friends for high scores
-
-## GitHub Setup
-
-### Creating a Repository
-
-1. **Create a GitHub account** at [github.com](https://github.com)
-
-2. **Install Git**:
-   - Windows: Download from [git-scm.com](https://git-scm.com)
-   - Mac: `brew install git` or download from git-scm.com
-   - Linux: `sudo apt install git`
-
-3. **Configure Git**:
+4. **Run the game**:
    ```bash
-   git config --global user.name "Your Name"
-   git config --global user.email "your.email@example.com"
+   python viet_restaurant.py
    ```
 
-4. **Create a new repository** on GitHub:
-   - Click the "+" icon → "New repository"
-   - Name it: `vietnamese-restaurant-game`
-   - Add description: "A cooking game celebrating Vietnamese culture"
-   - Choose "Public" and check "Add a README"
-   - Click "Create repository"
+### Controls
 
-5. **Upload your game**:
-   ```bash
-   # Navigate to your game folder
-   cd path/to/your/game
-   
-   # Initialize git
-   git init
-   
-   # Add files
-   git add vietnamese_restaurant.py
-   git add README.md
-   
-   # Commit
-   git commit -m "Initial commit: Vietnamese restaurant game"
-   
-   # Connect to GitHub (replace USERNAME and REPO_NAME)
-   git remote add origin https://github.com/USERNAME/REPO_NAME.git
-   
-   # Push to GitHub
-   git branch -M main
-   git push -u origin main
-   ```
+- **WASD** or **Arrow Keys** - Move your character around the restaurant
+- **SPACE** - Interact (pick up ingredients, add to stations, start cooking, serve customers)
 
-### Working with Your Team
+### Gameplay
 
-**Cloning the repository** (for team members):
-```bash
-git clone https://github.com/USERNAME/vietnamese-restaurant-game.git
-cd vietnamese-restaurant-game
-```
+1. **Check Customer Orders** - Customers appear on the right side showing what dish they want
+2. **Gather Ingredients** - Walk to ingredient stations and press SPACE to pick them up
+3. **Prep Station** - Add all ingredients to the PREP station (brown counter)
+4. **Cook Station** - Move ingredients to the COOK station (red stove) and start cooking
+5. **Serve Station** - When cooking is done, take the dish to the SERVE station (green counter)
+6. **Deliver to Customers** - Serve the completed dish to the matching customer
+7. **Keep Them Happy** - Watch the patience bar! Serve customers before they leave
 
-**Making changes**:
-```bash
-# Pull latest changes first
-git pull
+### Scoring
 
-# Make your changes to the code...
+- **Perfect Order**: 100 points + patience bonus (faster service = more points!)
+- **Complete Orders**: Track how many dishes you've successfully served
+- **Keep Customers Happy**: Don't let the patience bar run out or they'll leave!
 
-# Check what changed
-git status
+## 🍲 Vietnamese Dishes
 
-# Add your changes
-git add .
+Experience authentic Vietnamese cuisine:
 
-# Commit with a descriptive message
-git commit -m "Added Cao Lau dish and improved graphics"
+1. **Phở** - The iconic Vietnamese noodle soup with beef and herbs
+2. **Bánh Mì** - Delicious Vietnamese sandwich with French influence
+3. **Bún Chả** - Grilled meat with noodles (President Obama's favorite!)
+4. **Gỏi Cuốn** - Fresh spring rolls with shrimp and herbs
 
-# Push to GitHub
-git push
-```
+Each dish requires 3-4 specific ingredients - pay attention to the customer's order!
 
-**Creating branches** (for testing new features):
-```bash
-# Create and switch to a new branch
-git checkout -b add-timer-feature
+## 🎯 Tips for Success
 
-# Make changes...
+- **Read orders carefully** - Each customer wants a specific Vietnamese dish
+- **Work efficiently** - The faster you serve, the more bonus points you get
+- **Watch patience bars** - Green is good, yellow is warning, red means they're about to leave!
+- **Use the stations in order** - PREP → COOK → SERVE
+- **Don't mix orders** - Complete one dish at a time to avoid confusion
+- **Maximum 3 customers** - Focus on quality service!
 
-# Commit changes
-git add .
-git commit -m "Added countdown timer for orders"
+## 🌟 Features
 
-# Push branch to GitHub
-git push -u origin add-timer-feature
+- **Authentic Vietnamese Restaurant Atmosphere** - Beautiful hand-crafted backgrounds with lanterns, bamboo, and traditional decor
+- **12 Different Ingredients** - Noodles, broth, beef, chicken, shrimp, herbs, lime, jalapeño, cilantro, rice paper, bread, and fish sauce
+- **Dynamic Music** - Enjoy Vietnamese-inspired music that changes randomly
+- **Customer Variety** - Six different customer characters with unique appearances
+- **Beautiful Start Screen** - Vibrant Vietnamese-themed menu with cultural elements
+- **Progress Tracking** - See your score and total orders completed
 
-# On GitHub, create a Pull Request to merge into main
-```
+## 🎨 Cultural Experience
 
-## Project Structure Suggestion
+**Pho So 2** celebrates Vietnamese culture through:
+- Authentic dish recipes and ingredients
+- Traditional restaurant aesthetics
+- Vietnamese-inspired music
+- Cultural appreciation through gameplay
 
-```
-vietnamese-restaurant-game/
-│
-├── vietnamese_restaurant.py    # Main game file
-├── README.md                    # This file
-├── requirements.txt             # Python dependencies
-│
-├── assets/                      # Future: images and sounds
-│   ├── images/
-│   └── sounds/
-│
-└── docs/                        # Future: documentation
-    ├── dishes.md               # Information about dishes
-    └── development.md          # Development notes
-```
+## 📋 System Requirements
 
-## Contributing
+- **Python 3.6 or higher**
+- **Pygame library**
+- **Pillow library**
+- **Windows, Mac, or Linux**
+- **Mouse and keyboard**
 
-If working with a team, consider these practices:
+## 🎵 Credits
 
-1. **Use descriptive commit messages**: "Added timer feature" not "update"
-2. **Create branches for features**: Keep main branch stable
-3. **Test before pushing**: Make sure the game runs
-4. **Document your changes**: Update README when adding features
-5. **Communicate**: Let teammates know what you're working on
-
-## Vietnamese Cultural Resources
-
-To add more authentic content:
-
-- Research Vietnamese cuisine history
-- Learn about regional differences (North vs South Vietnam)
-- Understand traditional cooking methods
-- Include cultural context in fun facts
-- Consult with family members or Vietnamese community
-
-## License
-
-This is an educational project celebrating Vietnamese culture. Feel free to modify and share!
+Made with ❤️ to celebrate Vietnamese culture and cuisine
 
 ---
 
-**Made with ❤️ to celebrate Vietnamese culture and food**
+**Chúc ngon miệng!** (Enjoy your meal!)
 
-🍜 Chúc ngon miệng! (Enjoy your meal!)
+🍜 Have fun running your Vietnamese restaurant!
