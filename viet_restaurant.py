@@ -563,6 +563,9 @@ class VietnameseRestaurantGame:
         for station in self.ingredient_stations:
             if station.is_player_near(self.player) and not self.player.held_ingredient:
                 self.player.held_ingredient = station.ingredient_name
+
+                self.music_manager.play_sfx("pop")
+
                 # Set the downscaled sprite
                 if station.sprite:
                     try:
