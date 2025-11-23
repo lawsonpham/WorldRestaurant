@@ -1,28 +1,41 @@
 # Pho So 2
 
-## Project Description
-Pho So 2 is a restaurant simulation application built using Python and Pygame. The project simulates a high-paced Vietnamese kitchen environment, requiring users to manage resource allocation, execute sequential processing tasks, and handle time-sensitive customer service queues. The application demonstrates proficiency in object-oriented programming, real-time event handling, and state management within a graphical user interface.
+A Vietnamese restaurant simulation game built using Python and Pygame.
 
-## Technical Stack
-* **Language:** Python 3.x
-* **Libraries:**
-    * **Pygame:** Core engine used for rendering, input handling, and audio management.
-    * **Pillow (PIL):** Utilized for image processing and asset manipulation.
+## Details
 
-## Installation
+### Overview
+Pho So 2 models the fast-paced environment of a Vietnamese kitchen, requiring the player to manage ingredients, cooking stations, timing, and customer queues. It demonstrates real-time decision-making, state management, and resource handling within a game environment.
 
-### Prerequisites
-Ensure Python is installed on the system. It can be downloaded from [python.org](https://python.org).
+### Libraries
+- Pygame for rendering, sprite handling, event loops, and collision detection
+- Pillow (PIL) for image processing and asset manipulation
 
-### Setup Commands
-Execute the following commands in the terminal to install required dependencies and launch the application:
+### Future Improvements
+- Implement more dishes and customer personality types
+- Add sound effects and background music variations
+- Introduce difficulty levels
+- Improve the UI with animated transitions
+- Add save/load system and performance analytics
 
-```bash
-# Install game engine
+## Set Up Instructions
+
+### Requirements
+- Install Python 3.x from: [https://python.org](https://python.org/)
+
+### Install Dependencies
 pip install pygame
-
-# Install graphics handling library
 pip install Pillow
 
-# Launch application
+### Run the Game
 python viet_restaurant.py
+
+## Screenshots
+- ![Menu](resources/screenshots/menu.png)
+- ![Gameplay](resources/screenshots/gameplay.png)
+
+## Collaborators
+- Lawson Pham (GitHub: @lawsonpham)
+- Ryan Fang (GitHub: @Brustachio)
+- Albert Yorn (GitHub: @albrtyrn)
+- An Tiet (GitHub: @kwaaz1)
