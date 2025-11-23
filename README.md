@@ -18,21 +18,25 @@ Pho So 2 models the fast-paced environment of a Vietnamese kitchen, requiring th
 - Improve the UI with animated transitions
 - Add save/load system and performance analytics
 
+## Development Notes
+- Created for KSA x Claude Vibe-a-thon
+- Used LLM assistance (Claude AI) for debugging and code generation
+
+## Screenshots
+![Menu](resources/screenshots/menu.png)
+![Gameplay](resources/screenshots/gameplay.png) 
+
 ## Set Up Instructions
 
 ### Requirements
 - Install Python 3.x from: [https://python.org](https://python.org/)
 
 ### Install Dependencies
-pip install pygame
-pip install Pillow
+- pip install pygame
+- pip install Pillow
 
 ### Run the Game
-python viet_restaurant.py
-
-## Screenshots
-- ![Menu](resources/screenshots/menu.png)
-- ![Gameplay](resources/screenshots/gameplay.png)
+- python viet_restaurant.py
 
 ## Collaborators
 - Lawson Pham (GitHub: @lawsonpham)
